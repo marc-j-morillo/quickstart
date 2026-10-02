@@ -15,20 +15,20 @@ import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 public class TurretPollen {
     public static boolean goalIsRight = true;
 
-    public static Servo turretPollen;
+    public static Servo turretPollenLeft, turretPollenRight;
 
     public static double turretTargetPosition;   // desired angle, degrees
     public static double turretCurrentPosition;  // last commanded angle, degrees (no encoder feedback)
 
     public static double turretHardwareLimit = 160; // max travel from center, degrees
 
-    // Axon servo's total mechanical rotation range in degrees.
-    // Confirm this against how your servo is programmed (e.g. Axon Max ~355°).
-    public static double servoRangeDegrees = 355.0;
+    public static double servoRangeDegrees = 320.0;
 
     public Turret(HardwareMap hardwareMap) {
-        turretPollen = hardwareMap.get(Servo.class, "turretPollen");
-        // turretPollen.setDirection(Servo.Direction.REVERSE);
+        turretPollenLeft = hardwareMap.get(Servo.class, "turretPollenLeft");
+        turretPollenRight = hardwareMap.get(Servo.class, "turretPollenRight");
+        turretPollenLeft.setDirection(Servo.Direction.REVERSE);
+        // turretPollenRight.setDirection(Servo.Direction.REVERSE);
     }
 
     public void update() {
@@ -36,14 +36,15 @@ public class TurretPollen {
         setTurretAngle(turretTargetPosition);
     }
 
-    /**
+    /*
      * Commands the turret to a target angle (degrees, 0 = centered),
      * clamped to the hardware limit and converted to a servo position.
      */
     public void setTurretAngle(double targetDegrees) {
         double clamped = clampToLimit(angleWrap(targetDegrees));
         turretCurrentPosition = clamped;
-        turretServo.setPosition(degreesToServoPosition(clamped));
+        turretPollenLeft.setPosition(degreesToServoPosition(clamped));
+        turretPollenRight.setPosition(degreesToServoPosition(clamped));
     }
 
     private double clampToLimit(double degrees) {
@@ -52,7 +53,7 @@ public class TurretPollen {
         return degrees;
     }
 
-    /**
+    /*
      * Maps an angle in [-servoRangeDegrees/2, servoRangeDegrees/2] to a
      * servo position in [0.0, 1.0], with 0 degrees at center (0.5).
      */
@@ -71,13 +72,13 @@ public class TurretPollen {
         double targetGoalX;
         double targetGoalY;
 
-        if (isRed) {
-            targetGoalX = 58.0;
-            targetGoalY = goalIsRight ? 61.0 : 83.0;
-        } else {
-            targetGoalX = 84.0;
-            targetGoalY = !goalIsRight ? 61.0 : 83.0;
-        }
+        // Determine target goal coordinates
+        if (isRed) targetGoalX = 58.0;
+        else targetGoalX = 84.0;
+
+        if (Localization.botY < 61.0) targetGoalY = 61.0;
+        else if (Localization.botY > 83.0) targetGoalY = 83.0; 
+        else targetGoalY = Localization.botY;
 
         double deltaX = targetGoalX - Localization.botX;
         double deltaY = targetGoalY - Localization.botY;

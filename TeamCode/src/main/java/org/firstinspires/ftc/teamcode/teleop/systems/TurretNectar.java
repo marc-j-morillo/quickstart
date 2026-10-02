@@ -1,7 +1,5 @@
+// UNCOMMENT WHEN WE HAVE A NECTAR TURRET
 /*
-
-UNCOMMENT WHEN WE HAVE A NECTAR TURRET
-
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
@@ -40,15 +38,15 @@ public class TurretNectar {
         setTurretAngle(turretTargetPosition);
     }
 
-    /**
+    /*
      * Commands the turret to a target angle (degrees, 0 = centered),
      * clamped to the hardware limit and converted to a servo position.
-     *
+     *//*
 
     public void setTurretAngle(double targetDegrees) {
         double clamped = clampToLimit(angleWrap(targetDegrees));
         turretCurrentPosition = clamped;
-        turretServo.setPosition(degreesToServoPosition(clamped));
+        turretNectar.setPosition(degreesToServoPosition(clamped));
     }
 
     private double clampToLimit(double degrees) {
@@ -57,10 +55,10 @@ public class TurretNectar {
         return degrees;
     }
 
-    /**
+    /*
      * Maps an angle in [-servoRangeDegrees/2, servoRangeDegrees/2] to a
      * servo position in [0.0, 1.0], with 0 degrees at center (0.5).
-     *
+     *//*
     private double degreesToServoPosition(double degrees) {
         double position = 0.5 + (degrees / servoRangeDegrees);
         return Math.max(0.0, Math.min(1.0, position));
@@ -76,13 +74,12 @@ public class TurretNectar {
         double targetGoalX;
         double targetGoalY;
 
-        if (isRed) {
-            targetGoalX = 58.0;
-            targetGoalY = goalIsRight ? 61.0 : 83.0;
-        } else {
-            targetGoalX = 84.0;
-            targetGoalY = !goalIsRight ? 61.0 : 83.0;
-        }
+        if (isRed) targetGoalX = 58.0;
+        else targetGoalX = 84.0;
+
+        if (Localization.botY < 61.0) targetGoalY = 61.0;
+        else if (Localization.botY > 83.0) targetGoalY = 83.0; 
+        else targetGoalY = Localization.botY;
 
         double deltaX = targetGoalX - Localization.botX;
         double deltaY = targetGoalY - Localization.botY;

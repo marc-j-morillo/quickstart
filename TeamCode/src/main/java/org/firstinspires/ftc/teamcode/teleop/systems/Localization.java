@@ -11,17 +11,17 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.test.pinpoint.GoBildaPinpointDriver;
 
 // uncomment if we have a pinpoint
-/*
+
 public class Localization {
     public static GoBildaPinpointDriver odo;
     public static double botHeading;
     public static double botX;
     public static double botY;
     public Localization(HardwareMap hardwareMap) {
-        // odo = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
-        // odo.setOffsets(3.7795275591, 5.1968503937, DistanceUnit.INCH);
-        // odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        // odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
+        odo.setOffsets(3.7795275591, 5.1968503937, DistanceUnit.INCH); // Change these values
+        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
         botHeading = odo.getHeading(AngleUnit.RADIANS);
         botX = odo.getPosX(DistanceUnit.INCH);
@@ -67,4 +67,3 @@ public class Localization {
         }
     }
 }
-*/

@@ -1,5 +1,5 @@
 // TODO: 
-// Change case function to include all possible cases and changes
+// Adjust SHOOT case code
 
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
@@ -97,7 +97,8 @@ public class Transport {
     public ElapsedTime flowerWedgeWait;
 
     //Init the Look up table
-    public InterpLUT lut = new InterpLUT();
+    public InterpLUT velocityLut = new InterpLUT();
+    public InterpLUT hoodAngleLut = new InterpLUT();
 
     public static double distanceFromLimelightToTagInches;
 
@@ -152,14 +153,35 @@ public class Transport {
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
 
         // Lookup Velocity & Round to Nearest 10 RPM
-        double rawVelocity = lut.get(distanceFromLimelightToTagInches);
+        double rawVelocity = velocityLut.get(distanceFromLimelightToTagInches);
         double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
 
         return velocityTarget;
     }
 
+    public double calcHoodAngle() {
+        double targetGoalX;
+        double targetGoalY;
+
+        // Determine target goal coordinates
+        if (isRed) targetGoalX = 58.0;
+        else targetGoalX = 84.0;
+
+        if (Localization.botY < 51.0) targetGoalY = 61.0;
+        else if (Localization.botY > 93.0) targetGoalY = 83.0;
+        else targetGoalY = Localization.botY;
+
+        // Calculate Distance Vector
+        double deltaX = targetGoalX - Localization.botX;
+        double deltaY = targetGoalY - Localization.botY;
+        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
+
+        // Lookup Hood Angle and return
+        return hoodAngleLut.get(distanceFromLimelightToTagInches);;
+    }
+
     public static void setTransportState() {
-        if (gamepad1.dpad_down && transportState != TransportState.HOME) {
+        if (gamepad1.dpad_right && transportState != TransportState.HOME) {
             transportState = TransportState.HOME;
         }
         if (gamepad1.left_trigger > 0) {
@@ -210,30 +232,33 @@ public class Transport {
     }
     public Transport(HardwareMap hardwareMap) {
         //DISTANCE, VELOCITY
-        lut.add(0, 0);
+        velocityLut.add(0, 0);
         /*
-        lut.add(20, 450);
-        lut.add(30, 460);
-        lut.add(35, 470);
-        lut.add(40, 480);
-        lut.add(45, 490);
-        lut.add(55, 500);
-        lut.add(60, 510);
-        lut.add(65, 520);
-        lut.add(70, 530);
-        lut.add(75, 550);
-        lut.add(80, 570);
-        lut.add(85, 580);
-        lut.add(90, 600);
-        lut.add(95, 620);
-        lut.add(100, 640);
-        lut.add(105, 660);
-        lut.add(115, 680);
-        lut.add(125, 740);
-        lut.add(147, 850);
-        lut.add(1000, 850);
+        velocityLut.add(20, 450);
+        velocityLut.add(30, 460);
+        velocityLut.add(35, 470);
+        velocityLut.add(40, 480);
+        velocityLut.add(45, 490);
+        velocityLut.add(55, 500);
+        velocityLut.add(60, 510);
+        velocityLut.add(65, 520);
+        velocityLut.add(70, 530);
+        velocityLut.add(75, 550);
+        velocityLut.add(80, 570);
+        velocityLut.add(85, 580);
+        velocityLut.add(90, 600);
+        velocityLut.add(95, 620);
+        velocityLut.add(100, 640);
+        velocityLut.add(105, 660);
+        velocityLut.add(115, 680);
+        velocityLut.add(125, 740);
+        velocityLut.add(147, 850);
+        velocityLut.add(1000, 850);
         */
-        lut.createLUT();
+        velocityLut.createLUT();
+
+        hoodAngleLut.add(0, 0);
+        hoodAngleLut.createLUT();
 
         manualMode = new Toggle(false);
 
@@ -252,8 +277,7 @@ public class Transport {
         flowerWedgeWait = new ElapsedTime();
         flowerWedgeWait.reset();
 
-        //laser = hardwareMap.get(DigitalChannel.class, "laser");
-
+        // SET UP HARDWARE
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         //intake.setDirection(DcMotorSimple.Direction.REVERSE);
         
@@ -363,24 +387,32 @@ public class Transport {
             case POWER_SHOOTER_SHORT:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                shooterVelocityTarget = shootingShort - 20;
+                shooterVelocityTarget = shootingShort;
                 transferPosition = transferClosed;
                 fireTolerance = 30;
                 break;
             case POWER_SHOOTER_MED:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                shooterVelocityTarget = shootingMed - 20;
+                shooterVelocityTarget = shootingMed;
                 transferPosition = transferClosed;
                 fireTolerance = 30;
                 break;
             case POWER_SHOOTER_LONG:
                 intakePower = dormant;
                 transferPower = semiTransferring;
-                shooterVelocityTarget = shootingLong - 20;
+                shooterVelocityTarget = shootingLong;
                 transferPosition = transferClosed;
                 fireTolerance = 30;
                 break;
+            case AUTO_POWER:
+                intakePower = dormant;
+                transferPower = semiTransferring;
+                shooterVelocityTarget = calcVelocity();
+                transferPosition = transferClosed;
+                fireTolerance = 30;
+                break;
+
             case SHOOT:
                 // if (shooterVelocityTarget <= 550) {
                 //     fireTolerance = 150;
@@ -513,7 +545,7 @@ public class Transport {
                 // }
                 shooterVelocityTarget = calcVelocity();
                 transferPosition = transferClosed;
-                hoodPollenPosition = hoodMed;
+                hoodPollenPosition = calcHoodAngle();
                 fireTolerance = 30;
                 setTransportState();
                 break;
@@ -525,22 +557,12 @@ public class Transport {
                 } else {
                     fireTolerance = 100;
                 }
-                if ((Math.abs(Drive.rx) < .2) && (inRange(shooterVelocity, shooterVelocityTarget))) {
-                    if (shooterVelocityTarget <= 660 && shooterVelocityTarget >= 560) {
-                        transferPosition = transferOpen;
-                        intakePower = intaking;
-                        transferPower = intaking;
-                    } else {
-                        transferPosition = transferOpen;
-                        intakePower = intaking;
-                        transferPower = intaking;
-                    }
+                if (inRange(shooterVelocity, shooterVelocityTarget)) {
+                    transferPosition = transferOpen;
+                    intakePower = intaking;
+                    transferPower = intaking;
                 } else {
-                    if (shooterVelocityTarget >= 660) {
-                        transferPosition = transferClosed; //TODO: maybe dormant?
-                    } else {
-                        transferPosition = transferClosed;
-                    }
+                    transferPosition = transferClosed;
                     intakePower = dormant;
                     transferPower = dormant;
                 }
@@ -551,7 +573,7 @@ public class Transport {
         }
 
         if (gamepad1.square && TransportState != TransportState.HOME) {
-        TransportState = TransportState.HOME;
+            TransportState = TransportState.HOME;
 //                intakeToggle.value = false;
         }
     }
