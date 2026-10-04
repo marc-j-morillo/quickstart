@@ -32,10 +32,8 @@ public class Transport {
     //public DigitalChannel laser;
     public Toggle intakeToggle, redToggle, manualMode;
     public static DcMotorEx intake, transferMotor;
-    public static MotorEx leftShooter, rightShooter;
-    public static MotorGroup shooter;
-    public static Servo transferPollenBlocker, hoodPollen;
-    //public static Servo transferNectar, hoodNectar;
+    public static Servo transferPollenBlocker;
+    //public static Servo transferNectar;
     public static Servo flowerWedgeLeft, flowerWedgeRight;
 
     // ----- Limelight Stuff -------
@@ -48,22 +46,10 @@ public class Transport {
     // distance from the target to the floor
     public double goalHeightInches = 65.6;
 
-    //Shooter PID
-    private PIDFController shooterController;
-
-    public double shooterp = 0.007, shooteri = 0, shooterd = 0, kV = .000400186335403727, kS = .001;
-    public double shooterpid;
     //MOTOR POWER
     public static double intakePower, transferPower;
 
-    //MOTOR VELOCITY
-    public static double shooterVelocity;
-
-    //MOTOR TARGETS
-    public static double shooterVelocityTarget;
-
-    //SERVO STATES
-    public static double transferPosition, hoodPollenPosition, hoodNectarPosition;
+    public static double transferPosition;
 
     //ELAPSED TIMES
     public static ElapsedTime matchTimer;
@@ -75,15 +61,10 @@ public class Transport {
     public final double intaking = 1;
     public final double outtaking = -1;
     public final double semiTransferring = intaking * 0.2;
+
     //SERVO STATES
     public final double transferOpen = .8;
     public final double transferClosed = 0;
-
-    //SHOOTER VELOCITY TARGETS
-    public final double shootingLong = 800;
-    public final double shootingMed = 600;
-    public final double shootingShort = 510;
-    public final double emergencyEject = 0;
 
     //HOOD POSITIONS
     public final double hoodShort = 0;
@@ -95,10 +76,6 @@ public class Transport {
     public final double flowerWedgeUp = .5; // TEMPORARY VALUE
     public boolean flowerWedgeIsDown = true;
     public ElapsedTime flowerWedgeWait;
-
-    //Init the Look up table
-    public InterpLUT velocityLut = new InterpLUT();
-    public InterpLUT hoodAngleLut = new InterpLUT();
 
     public static double distanceFromLimelightToTagInches;
 
@@ -123,62 +100,6 @@ public class Transport {
 
     public TransportState transportState = TransportState.HOME;
     public TransportState returnCase = TransportState.HOME;
-
-    //Fire Ready?
-    public static double fireTolerance = 40;
-    public boolean inRange(double currentVelocity, double targetVelocity) {
-        if (Math.abs(targetVelocity - currentVelocity) < fireTolerance) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public double calcVelocity() {
-        double targetGoalX;
-        double targetGoalY;
-
-        // Determine target goal coordinates
-        if (isRed) targetGoalX = 58.0;
-        else targetGoalX = 84.0;
-
-        if (Localization.botY < 51.0) targetGoalY = 61.0;
-        else if (Localization.botY > 93.0) targetGoalY = 83.0;
-        else targetGoalY = Localization.botY;
-
-
-        // Calculate Distance Vector
-        double deltaX = targetGoalX - Localization.botX;
-        double deltaY = targetGoalY - Localization.botY;
-        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
-
-        // Lookup Velocity & Round to Nearest 10 RPM
-        double rawVelocity = velocityLut.get(distanceFromLimelightToTagInches);
-        double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
-
-        return velocityTarget;
-    }
-
-    public double calcHoodAngle() {
-        double targetGoalX;
-        double targetGoalY;
-
-        // Determine target goal coordinates
-        if (isRed) targetGoalX = 58.0;
-        else targetGoalX = 84.0;
-
-        if (Localization.botY < 51.0) targetGoalY = 61.0;
-        else if (Localization.botY > 93.0) targetGoalY = 83.0;
-        else targetGoalY = Localization.botY;
-
-        // Calculate Distance Vector
-        double deltaX = targetGoalX - Localization.botX;
-        double deltaY = targetGoalY - Localization.botY;
-        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
-
-        // Lookup Hood Angle and return
-        return hoodAngleLut.get(distanceFromLimelightToTagInches);;
-    }
 
     public static void setTransportState() {
         if (gamepad1.dpad_right && transportState != TransportState.HOME) {
@@ -228,38 +149,9 @@ public class Transport {
                 flowerWedgeIsDown = true;
             }
         }
-        
     }
+
     public Transport(HardwareMap hardwareMap) {
-        //DISTANCE, VELOCITY
-        velocityLut.add(0, 0);
-        /*
-        velocityLut.add(20, 450);
-        velocityLut.add(30, 460);
-        velocityLut.add(35, 470);
-        velocityLut.add(40, 480);
-        velocityLut.add(45, 490);
-        velocityLut.add(55, 500);
-        velocityLut.add(60, 510);
-        velocityLut.add(65, 520);
-        velocityLut.add(70, 530);
-        velocityLut.add(75, 550);
-        velocityLut.add(80, 570);
-        velocityLut.add(85, 580);
-        velocityLut.add(90, 600);
-        velocityLut.add(95, 620);
-        velocityLut.add(100, 640);
-        velocityLut.add(105, 660);
-        velocityLut.add(115, 680);
-        velocityLut.add(125, 740);
-        velocityLut.add(147, 850);
-        velocityLut.add(1000, 850);
-        */
-        velocityLut.createLUT();
-
-        hoodAngleLut.add(0, 0);
-        hoodAngleLut.createLUT();
-
         manualMode = new Toggle(false);
 
         if (isRed) {
@@ -292,22 +184,10 @@ public class Transport {
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        shooterController = new PIDFController(shooterp, shooteri, shooterd, kV);
-        leftShooter = new Motor(hardwareMap, "leftShooter", Motor.GoBILDA.RPM_6000);
-        rightShooter = new Motor(hardwareMap, "rightShooter", Motor.GoBILDA.RPM_6000);
-        rightShooter.setInverted(true); // May change to leftShooter.setInverted(true); depending on which should be inverted
-        shooter = new MotorGroup(leftShooter, rightShooter);
-        shooter.setRunMode(MotorEx.RunMode.RawPower);
-
         transferPollenBlocker = hardwareMap.get(ServoImplEx.class, "transferPollenBlocker");
         transferPollenBlocker.setDirection(Servo.Direction.FORWARD);
         //transferNectar = hardwareMap.get(ServoImplEx.class, "transferNectar");
         //transferNectar.setDirection(Servo.Direction.FORWARD);
-
-        hoodPollen = hardwareMap.get(ServoImplEx.class, "hoodPollen");
-        hoodPollen.setDirection(Servo.Direction.REVERSE);
-        //hoodNectar = hardwareMap.get(ServoImplEx.class, "hoodNectar");
-        //hoodNectar.setDirection(Servo.Direction.REVERSE);
 
         flowerWedgeLeft = hardwareMap.get(ServoImplEx.class, "flowerWedgeLeft");
         //flowerWedgeLeft.setDirection(Servo.Direction.REVERSE);
@@ -318,25 +198,17 @@ public class Transport {
 
         if (inAuto) {
             intakePower = dormant;
-            shooterVelocity = dormant;
-            shooterVelocityTarget = dormant;
             transferPollenBlocker.setPosition(transferClosed);
             //transferNectar.setPosition(transferClosed);
             flowerWedgeLeft.setPosition(flowerWedgeDown);
             flowerWedgeRight.setPosition(flowerWedgeDown);
-            hoodPollen.setPosition(hoodShort);
-            //hoodNectar.setPosition(hoodShort);
             //led.setPosition(0);
         } else {
             intakePower = dormant;
-            shooterVelocity = dormant;
-            shooterVelocityTarget = dormant;
             transferPollenBlocker.setPosition(transferClosed);
             //transferNectar.setPosition(transferClosed);
             flowerWedgeLeft.setPosition(flowerWedgeDown);
             flowerWedgeRight.setPosition(flowerWedgeDown);
-            hoodPollen.setPosition(hoodShort);
-            //hoodNectar.setPosition(hoodShort);
             //led.setPosition(.6);
         }
     }
@@ -473,8 +345,9 @@ public class Transport {
         shooterVelocity = shooter.getVelocity();
         shooterController.setP(shooterp);
         shooterController.setF(kV * voltageMultiplier);
-        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + Math.abs((Math.signum(shooterVelocityTarget) * kS * voltageMultiplier));
+        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
         shooter.set(Range.clip(shooterpid, -1, 1));
+
 
         switch (transportState) {
             case HOME:
