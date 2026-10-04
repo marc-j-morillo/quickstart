@@ -10,8 +10,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.test.pinpoint.GoBildaPinpointDriver;
 
-// uncomment if we have a pinpoint
-
 public class Localization {
     public static GoBildaPinpointDriver odo;
     public static double botHeading;
