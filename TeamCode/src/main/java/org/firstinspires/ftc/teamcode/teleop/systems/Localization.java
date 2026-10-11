@@ -5,11 +5,6 @@ import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.test.pinpoint.GoBildaPinpointDriver;
-
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import com.pedropathing.math.Pose;
@@ -69,10 +64,10 @@ public class Localization {
         Pose cornerPose;
         if (isRed) {
             cornerPose = new Pose(113.520177165, 136.4, Math.toRadians(90));
-            //odo.setPosition(new Pose2D(DistanceUnit.INCH, 113.520177165, 136.4, AngleUnit.RADIANS, Math.toRadians(90)));
+            //cornerPose = new Pose(113.520177165, 136.4, folower.pose().heading());
         } else {
             cornerPose = new Pose(31.479822835, 136.4, Math.toRadians(90));
-            //odo.setPosition(new Pose2D(DistanceUnit.INCH, 31.479822835, 136.4, AngleUnit.RADIANS, Math.toRadians(90)));
+            //cornerPose = new Pose(113.520177165, 136.4, folower.pose().heading());
         }
         follower.setPose(cornerPose);
 //        Localization.odo.setPosX(Vision.visionBotX, DistanceUnit.INCH);

@@ -40,6 +40,8 @@ public class Robot {
     public LynxModule CtrlHub;
     public LynxModule ExpHub;
 
+    public static boolean flowerWedgeIsActive = false; // Auto only
+
     //FSMs
     public static enum TransportState {
         HOME,
@@ -66,6 +68,7 @@ public class Robot {
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
+
     }
 
     public void init(HardwareMap hardwareMap, Pose startPose) {
@@ -82,6 +85,20 @@ public class Robot {
         localization.update(gamepad1);
 
         setTransportState();
+    }
+    public void update() {
+        voltage = voltageSensor.getVoltage();
+        voltageMultiplier = nominalVoltage / voltage;
+
+        shooter.update(voltageMultiplier, false);
+        intake.update(flowerWedgeIsActive);
+        localization.update();
+        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
+        if (transportState == TransportState.POWER_SHOOTER) {
+            if (shooter.inRange()) {
+                transportState = TransportState.SHOOT;
+            }
+        }
     }
 
     /** Current inputs for the controller:
@@ -109,7 +126,7 @@ public class Robot {
         } else if (gamepad1.b && transportState != TransportState.OUTTAKE) {
             returnCase = transportState;
             transportState = TransportState.OUTTAKE;
-        } else if (!gamepad.b && transpoetState == TransportState.OUTTAKE) {
+        } else if (!gamepad.b && transportState == TransportState.OUTTAKE) {
             transportState = returnCase;
         } else {
             transportState = TransportState.HOME;

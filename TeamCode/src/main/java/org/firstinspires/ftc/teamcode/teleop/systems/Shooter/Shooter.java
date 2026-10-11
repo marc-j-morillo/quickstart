@@ -1,6 +1,3 @@
-// TODO: Add turretNectar class and variables, and update methods to include nectar turret functionality
-// Change add an offset for the turret position based on the exact turret position on the robot,
-// and set it to 0 for now.
 
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
@@ -302,6 +299,9 @@ public class Shooter {
             velocityMultiplier = 1;
         }
         if (isShooting) {
+            velocityMultiplier = 1;
+        }
+        if (inAuto) {
             velocityMultiplier = 1;
         }
         velocityTarget *= velocityMultiplier;

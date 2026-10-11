@@ -48,6 +48,8 @@ public class testCode extends OpMode {
         double loopTime = newTime-oldTime;
         oldTime = newTime;
 
+        robot.update();
+
         telemetry.addData("Transition Heading", transitionHeading);
         telemetry.addData("Distance To Goal", Transport.distanceFromLimelightToTagInches);
         telemetry.addData("TransitionX", transitionBotX);

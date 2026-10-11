@@ -1,5 +1,3 @@
-// TODO: 
-// Adjust SHOOT case code
 
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
@@ -58,8 +56,8 @@ public class Intake {
     public static final double semiTransferring = intaking * 0.2; // 0.1 power
 
     //SERVO STATES
-    public static final double transferOpen = .8; // TEMPORARY VALUE
-    public static final double transferClosed = 0; // TEMPORARY VALUE
+    public static final double blockerOpen = .8; // TEMPORARY VALUE
+    public static final double blockerClosed = 0; // TEMPORARY VALUE
 
     //FLOWER WEDGE POSITIONS
     public static final double flowerWedgeDown = 0; // TEMPORARY VALUE
@@ -122,52 +120,55 @@ public class Intake {
 
         if (inAuto) {
             intakePower = dormant;
-            transferPollenBlocker.setPosition(transferClosed);
-            //transferNectar.setPosition(transferClosed);
+            transferPollenBlocker.setPosition(blockerClosed);
+            //transferNectar.setPosition(blockerClosed);
             flowerWedgeLeft.setPosition(flowerWedgeUp);
             flowerWedgeRight.setPosition(flowerWedgeUp);
             //led.setPosition(0);
         } else {
             intakePower = dormant;
-            transferPollenBlocker.setPosition(transferClosed);
-            //transferNectar.setPosition(transferClosed);
+            transferPollenBlocker.setPosition(blockerClosed);
+            //transferNectar.setPosition(blockerClosed);
             flowerWedgeLeft.setPosition(flowerWedgeUp);
             flowerWedgeRight.setPosition(flowerWedgeUp);
             //led.setPosition(.6);
         }
     }
 
-    public void update() {
+    public void update(boolean flowerWedgeIsActive) {
         intake.setPower(intakePower);
         transferMotor.setPower(transferPower);
         transferPollenBlocker.setPosition(blockerPosition);
         //transferNectar.setPosition(blockerPosition);
+        flowerWedgeLeft.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
+        flowerWedgeRight.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
+
 
         switch (Drive.transportState) {
             case HOME:
                 intakePower = dormant;
                 transferPower = dormant;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case INTAKE:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case OUTTAKE:
                 intakePower = outtaking;
                 transferPower = outtaking;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case AUTO_POWER:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case SHOOT:
                 intakePower = intaking;
                 transferPower = intaking;
-                blockerPosition = transferOpen;
+                blockerPosition = blockerOpen;
                 break;
         }
     }
@@ -199,27 +200,27 @@ public class Intake {
             case HOME:
                 intakePower = dormant;
                 transferPower = dormant;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case OUTTAKE:
                 intakePower = outtaking;
                 transferPower = outtaking;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case INTAKE:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case AUTO_POWER:
                 intakePower = intaking;
                 transferPower = semiTransferring;
-                blockerPosition = transferClosed;
+                blockerPosition = blockerClosed;
                 break;
             case SHOOT:
                 intakePower = intaking;
                 transferPower = intaking;
-                blockerPosition = transferOpen;
+                blockerPosition = blockerOpen;
                 break;
         }
     }

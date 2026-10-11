@@ -32,8 +32,6 @@ public class Drive {
 
     public static boolean isDriving = false;
 
-    public static final double notMoving = 0;
-
 
 
 
@@ -66,17 +64,10 @@ public class Drive {
         } else {
             robotCentricDrive();
         }
-        if (Robot.transportState != Robot.TransportState.SHOOT && Robot.transportState != Robot.TransportState.POWER_SHOOTER) {
-            frontLeft.setPower(frontLeftPower);
-            backLeft.setPower(backLeftPower);
-            frontRight.setPower(frontRightPower);
-            backRight.setPower(backRightPower);
-        } else {
-            frontLeft.setPower(notMoving);
-            backLeft.setPower(notMoving);
-            frontRight.setPower(notMoving);
-            backRight.setPower(notMoving);
-        }
+        frontLeft.setPower(frontLeftPower);
+        backLeft.setPower(backLeftPower);
+        frontRight.setPower(frontRightPower);
+        backRight.setPower(backRightPower);
     }
 
 
