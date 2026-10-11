@@ -16,8 +16,6 @@ import com.qualcomm.robotcore.util.Range;
 
 import com.arcrobotics.ftclib.util.InterpLUT;
 
-import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
-
 public class Flywheel {
     public static MotorEx leftShooter, rightShooter;
     public static MotorGroup shooter;

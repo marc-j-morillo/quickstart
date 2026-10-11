@@ -10,8 +10,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
-
 public class TurretPollen {
     public static Servo turretPollenLeft, turretPollenRight;
 

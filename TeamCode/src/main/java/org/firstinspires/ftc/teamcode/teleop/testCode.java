@@ -21,51 +21,14 @@ import java.util.List;
 
 @TeleOp(name = "testCode", group = "TeleOp")
 public class testCode extends OpMode {
-    Drive drive;
-    Transport transport;
-
-//    Vision vision;
-
-    Localization localization;
-    TurretPollen turretPollen;
-
-    public VoltageSensor voltageSensor;
-    public List<LynxModule> allHubs;
-    public LynxModule CtrlHub;
-
-    public LynxModule ExpHub;
-
-    public double voltage;
-
-    public double oldTime = 0;
-
-    public ElapsedTime matchTimer;
-
-    public static double nominalVoltage = 14;
+    Robot robot;
 
 
     @Override
     public void init() {
-        voltageSensor =  hardwareMap.voltageSensor.iterator().next();
         GlobalVars.inAuto = false;
         GlobalVars.isRed = false;
-        drive = new Drive(hardwareMap, true);
-        transport = new Transport(hardwareMap);
-//        vision = new Vision(hardwareMap);
-        localization = new Localization(hardwareMap);
-        turretPollen = new TurretPollen(hardwareMap);
-        matchTimer = new ElapsedTime();
-        matchTimer.reset();
-
-        allHubs = hardwareMap.getAll(LynxModule.class);
-        CtrlHub = allHubs.get(0);
-        ExpHub = allHubs.get(1);
-
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
-
-        telemetry.update();
+        robot = new Robot(hardwareMap);
     }
 
     @Override
@@ -84,12 +47,6 @@ public class testCode extends OpMode {
         double newTime = getRuntime();
         double loopTime = newTime-oldTime;
         oldTime = newTime;
-
-        voltage = voltageSensor.getVoltage();
-        drive.update(gamepad1, gamepad2, nominalVoltage / voltage);
-        transport.update(gamepad1, gamepad2, nominalVoltage / voltage);
-        localization.update(gamepad1);
-        turretPollen.update();
 
         telemetry.addData("Transition Heading", transitionHeading);
         telemetry.addData("Distance To Goal", Transport.distanceFromLimelightToTagInches);

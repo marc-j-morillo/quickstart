@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 
 public class Drive {
     public static DcMotorEx frontRight;
@@ -17,7 +16,7 @@ public class Drive {
     public static DcMotorEx backRight;
     public static DcMotorEx backLeft;
     
-    public static double rx; // Rotation value for the robot
+    public static double rx = 0; // Rotation value for the robot
     public static double frontLeftPower, backLeftPower, frontRightPower, backRightPower;
     public static double driveP = 0, driveI = 0, driveD = 0, driveF = 0; // Change these values
 
@@ -31,10 +30,14 @@ public class Drive {
 
     public boolean FieldCentric = false;
 
-    public Toggle pinpointToGoal;
+    public static boolean isDriving = false;
 
-    public Drive(HardwareMap hardwareMap) {
-        pinpointToGoal = new Toggle(true);
+    public static final double notMoving = 0;
+
+
+
+
+    public Drive(HardwareMap hardwareMap, boolean fieldCentric) {
         frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
         frontLeft = hardwareMap.get(DcMotorEx.class, "frontLeft");
         backRight = hardwareMap.get(DcMotorEx.class, "backRight");
@@ -49,37 +52,34 @@ public class Drive {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         this.FieldCentric = fieldCentric;
-        rx = 0;
     }
 
-    public void update(Gamepad gamepad1, Gamepad gamepad2, double voltageMultiplier) {
-        pinpointToGoal.update(gamepad1.options);
+    public void update(Gamepad gamepad1) {
+        if (gamepad1.left_stick_x != 0 || gamepad1.left_stick_y != 0 || gamepad1.right_stick_x != 0) {
+            isDriving = true;
+        } else {
+            isDriving = false;
+        }
 
         if (FieldCentric && hasPinpoint) {
             fieldCentricDrive();
         } else {
             robotCentricDrive();
         }
-
-        frontLeft.setPower(frontLeftPower);
-        backLeft.setPower(backLeftPower);
-        frontRight.setPower(frontRightPower);
-        backRight.setPower(backRightPower);
+        if (Robot.transportState != Robot.TransportState.SHOOT && Robot.transportState != Robot.TransportState.POWER_SHOOTER) {
+            frontLeft.setPower(frontLeftPower);
+            backLeft.setPower(backLeftPower);
+            frontRight.setPower(frontRightPower);
+            backRight.setPower(backRightPower);
+        } else {
+            frontLeft.setPower(notMoving);
+            backLeft.setPower(notMoving);
+            frontRight.setPower(notMoving);
+            backRight.setPower(notMoving);
+        }
     }
 
-    
-    private double calcRotBasedOnIdeal(double heading, double idealHeading) {
-        // Error in rotations (should always be between (-180, 180]
-        double err = angleWrap(idealHeading - heading);
-        return Range.clip(turnController.calculate(err, 0), -1, 1);
-    }
-    private double angleWrap(double angle) {
-        // Wraps an angle to the range (-180, 180]
-        angle %= 360;
-        if (angle > 180) angle -= 360;
-        if (angle <= -180) angle += 360;
-        return angle;
-    }
+
 
     private void fieldCentricDrive() {
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed

@@ -1,3 +1,5 @@
+
+/*
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
@@ -10,7 +12,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 
 public class TurretNectar {
     public static Servo turretNectarLeft, turretNectarRight;
@@ -26,4 +27,4 @@ public class TurretNectar {
         turretNectarLeft.setPosition(turretTargetPosition);
         turretNectarRight.setPosition(turretTargetPosition);
     }
-}
+}*/

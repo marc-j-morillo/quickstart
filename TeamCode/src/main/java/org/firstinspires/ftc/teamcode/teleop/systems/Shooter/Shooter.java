@@ -16,15 +16,14 @@ import com.qualcomm.robotcore.util.Range;
 
 import com.arcrobotics.ftclib.util.InterpLUT;
 
-import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
-
-import teleop.systems.Drive.Localization;
 public class Shooter {
+    public static final double dormant = 0;
 
     // HOOD CLASS AND VARIABLES
     HoodPollen hoodPollen;
 
-
+    //SERVO STATES
+    public static double hoodPollenPosition, hoodNectarPosition;
 
     // TURRET CLASS AND VARIABLES
     TurretPollen turretPollen;
@@ -34,23 +33,23 @@ public class Shooter {
 
     public static double turretTargetPositionNectar;   // desired angle
 
-    public static double turretHardwareLimit = 160;    // max travel from center, degrees
+    public static final double turretHardwareLimit = 160;    // max travel from center, degrees
 
-    public static double servoRangeDegrees = 320.0;
+    public static final double servoRangeDegrees = 320.0;
 
     // Change these offsets to the actual turret position on the robot, for now they are set to 0
     // Offsets from odometry center to turret center, in inches
-    public final double turretPollenXOffset = 0.0;
-    public final double turretPollenYOffset = 0.0;
-    public final double turretNectarXOffset = 0.0;
-    public final double turretNectarYOffset = 0.0;
+    public static final double turretPollenXOffset = 0.0;
+    public static final double turretPollenYOffset = 0.0;
+    public static final double turretNectarXOffset = 0.0;
+    public static final double turretNectarYOffset = 0.0;
 
 
 
     // FLYWHEEL CLASS AND VARIABLES
     Flywheel flywheel;
 
-    public double goalHeightInches = 65.6;
+    public static final double goalHeightInches = 65.6;
 
     //Shooter PID
     private PIDFController shooterController;
@@ -64,10 +63,15 @@ public class Shooter {
     //MOTOR TARGETS
     public static double shooterVelocityTarget;
 
-    //SERVO STATES
-    public static double hoodPollenPosition, hoodNectarPosition;
+    public static double fireTolerance = 40;
+    public static final double notShootingTolerance = 50;
+    public static final double poweringTolerance = 40;
+    public static final double shootingTolerance = 150;
 
-    
+
+    public static final double emergencyEject = 0;
+
+
 
     public Shooter(HardwareMap hardwareMap) {
         //SHOOTER LUT
@@ -86,12 +90,12 @@ public class Shooter {
         hoodPollen = new HoodPollen(hardwareMap);
         shooterController = new PIDFController(shooterp, shooteri, shooterd, kV);
         
-        shooterVelocity = 0;
-        shooterVelocityTarget = 0;
+        shooterVelocity = dormant;
+        shooterVelocityTarget = dormant;
         hoodPollenPosition = 0;
     }
 
-    public void update(Gamepad gamepad1, Gamepad gamepad2, double voltageMultiplier) {
+    public void update(double voltageMultiplier, boolean isDriving) {
         turretTargetPositionPollen = turretTargetToGoal(true);
         turretPollen.update(turretTargetPositionPollen);
         //turretTargetPositionNectar = turretTargetToGoal(false);
@@ -100,20 +104,44 @@ public class Shooter {
         hoodPollenPosition = calcHoodAngle();
         hoodPollen.update(hoodPollenPosition);
 
-        if (shooterVelocityTarget == 0) {
+        if (shooterVelocityTarget == 0 || isDriving) {
             shooterp = 0;
             kV = 0;
         } else {
             shooterp = .025; // Change these values
             kV = .000400186335403727; // Change these values
         }
-        shooterVelocityTarget = calcVelocity();
+        
         shooterVelocity = shooter.getVelocity();
         shooterController.setP(shooterp);
         shooterController.setF(kV * voltageMultiplier);
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
         flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
+
+        switch (Drive.transportState) {
+            case HOME:
+                shooterVelocityTarget = calcVelocity(isDriving, false);
+                fireTolerance = notShootingTolerance;
+                break;
+            case INTAKE:
+                shooterVelocityTarget = calcVelocity(isDriving, false);
+                fireTolerance = notShootingTolerance;
+                break;
+            case OUTTAKE:
+                shooterVelocityTarget = calcVelocity(isDriving, false);
+                fireTolerance = notShootingTolerance;
+                break;
+            case POWER_SHOOTER:
+                shooterVelocityTarget = calcVelocity(isDriving, true);
+                fireTolerance = poweringTolerance;
+                break;
+            case SHOOT:
+                shooterVelocityTarget = calcVelocity(isDriving, true);
+                fireTolerance = shootingTolerance;
+                break;
+        }
     }
+
     
     // -------------------------------- TURRET METHODS ---------------------------------
     /*
@@ -142,13 +170,13 @@ public class Shooter {
         return Math.max(0.0, Math.min(1.0, position));
     }
 
-    public static double angleWrap(double degrees) {
+    private static double angleWrap(double degrees) {
         while (degrees > 180)  degrees -= 360;
         while (degrees < -180) degrees += 360;
         return degrees;
     }
 
-    public double turretTargetToGoal(boolean isPollen) {
+    private double turretTargetToGoal(boolean isPollen) {
         double xOffset;
         double yOffset;
 
@@ -188,7 +216,7 @@ public class Shooter {
 
     // -------------------------------- HOOD METHODS ---------------------------------
 
-    public double calcHoodAngle(boolean isPollen) {
+    private double calcHoodAngle(boolean isPollen) {
         double xOffset;
         double yOffset;
 
@@ -225,38 +253,59 @@ public class Shooter {
 
     // -------------------------------- FLYWHEEL METHODS ---------------------------------
 
-    public static double fireTolerance = 40;
-    public boolean inRange(double currentVelocity, double targetVelocity) {
-        if (Math.abs(targetVelocity - currentVelocity) < fireTolerance) {
+    
+    public boolean inRange() {
+        if (Math.abs(shooterVelocity - shooterVelocityTarget) < fireTolerance) {
             return true;
         } else {
             return false;
         }
     }
 
-    public double calcVelocity() {
+    private double calcVelocity(boolean isDriving, boolean isShooting) {
         double targetGoalX;
         double targetGoalY;
 
+        double velocityMultiplier = 1;
+
         // Determine target goal coordinates
-        if (isRed) targetGoalX = 58.0;
-        else targetGoalX = 84.0;
+        if (isRed) {
+            targetGoalX = 58.0;
+        } else {
+            targetGoalX = 84.0;
+        }
 
-        if (Localization.botY < 51.0) targetGoalY = 61.0;
-        else if (Localization.botY > 93.0) targetGoalY = 83.0;
-        else targetGoalY = Localization.botY;
-
+        if (Localization.botY < 51.0) {
+            targetGoalY = 61.0;
+        } else if (Localization.botY > 93.0) {
+            targetGoalY = 83.0;
+        } else {
+            targetGoalY = Localization.botY;
+        }
 
         // Calculate Distance Vector
         double deltaX = targetGoalX - Localization.botX;
         double deltaY = targetGoalY - Localization.botY;
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
+        
 
         // Lookup Velocity & Round to Nearest 10 RPM
         double rawVelocity = velocityLut.get(distanceFromLimelightToTagInches);
         double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
+        
+        // Change velocity depending if on we can shoot or if we are driving.
+        if (deltaY < 1) { // Will hit the walls of the goal, so can't shoot
+            velocityMultiplier = 0.5;
+        } else if (isDriving) {
+            velocityMultiplier = 0.8;
+        } else {
+            velocityMultiplier = 1;
+        }
+        if (isShooting) {
+            velocityMultiplier = 1;
+        }
+        velocityTarget *= velocityMultiplier;
 
         return velocityTarget;
     }
-
 }
