@@ -24,13 +24,13 @@ public class Localization {
         // odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         // odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
-        botHeading = odo.getHeading(AngleUnit.RADIANS);
-        botX = odo.getPosX(DistanceUnit.INCH);
-        botY = odo.getPosY(DistanceUnit.INCH);
+        // botHeading = odo.getHeading(AngleUnit.RADIANS);
+        // botX = odo.getPosX(DistanceUnit.INCH);
+        // botY = odo.getPosY(DistanceUnit.INCH);
     }
 
     public void createFollower(HardwareMap hardwareMap, Pose startPose) {
-        follower = Constraints.create(hardwareMap);
+        follower = Constants.create(hardwareMap);
         follower.setPose(startPose);
         follower.update();
     }

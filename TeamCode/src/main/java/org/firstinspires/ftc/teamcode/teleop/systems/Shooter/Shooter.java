@@ -68,17 +68,20 @@ public class Shooter {
 
     public static final double emergencyEject = 0;
 
-
+    public InterpLUT velocityLut = new InterpLUT();
+    public InterpLUT hoodAngleLut = new InterpLUT();
+    public static double distanceFromLimelightToTagInches;
+    public static double turretCurrentPosition;
 
     public Shooter(HardwareMap hardwareMap) {
         //SHOOTER LUT
         //DISTANCE, VELOCITY
-        velocityLut.add(0, 0);
+        velocityLut.add(0.0, 0.0);
         velocityLut.createLUT();
 
         //HOOD ANGLE LUT
         //DISTANCE, HOOD ANGLE
-        hoodAngleLut.add(0, 0);
+        hoodAngleLut.add(0.0, 0.0);
         hoodAngleLut.createLUT();
 
         turretPollen = new TurretPollen(hardwareMap);
@@ -98,7 +101,7 @@ public class Shooter {
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
 
-        hoodPollenPosition = calcHoodAngle();
+        hoodPollenPosition = calcHoodAngle(true);
         hoodPollen.update(hoodPollenPosition);
 
         if (shooterVelocityTarget == 0 || isDriving) {
@@ -109,13 +112,13 @@ public class Shooter {
             kV = .000400186335403727; // Change these values
         }
         
-        shooterVelocity = shooter.getVelocity();
+        shooterVelocity = Flywheel.leftShooter.getVelocity();
         shooterController.setP(shooterp);
         shooterController.setF(kV * voltageMultiplier);
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
         flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
 
-        switch (Drive.transportState) {
+        switch (Robot.transportState) {
             case HOME:
                 shooterVelocityTarget = calcVelocity(isDriving, false);
                 fireTolerance = notShootingTolerance;
@@ -148,8 +151,7 @@ public class Shooter {
     private void setTurretAngle(double targetDegrees) {
         double clamped = clampToLimit(angleWrap(targetDegrees));
         turretCurrentPosition = clamped;
-        turretPollenLeft.setPosition(degreesToServoPosition(clamped));
-        turretPollenRight.setPosition(degreesToServoPosition(clamped));
+        turretPollen.update(degreesToServoPosition(clamped));
     }
 
     private double clampToLimit(double degrees) {
@@ -244,7 +246,7 @@ public class Shooter {
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
 
         // Lookup Hood Angle and return
-        return hoodAngleLut.get(distanceFromLimelightToTagInches);;
+        return hoodAngleLut.get(distanceFromLimelightToTagInches);
     }
 
 

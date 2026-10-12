@@ -3,9 +3,9 @@ package org.firstinspires.ftc.teamcode.teleop.systems;
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
 
-import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -14,6 +14,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -23,6 +25,8 @@ import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import com.pedropathing.math.Pose;
 
+import java.util.List;
+
 public class Robot {
     Shooter shooter;
     Drive drive;
@@ -30,9 +34,9 @@ public class Robot {
     Localization localization;
 
     public VoltageSensor voltageSensor;
-    public voltage;
+    public double voltage;
     public static final double nominalVoltage = 14.0;
-    public voltageMultiplier;
+    public double voltageMultiplier;
 
     public static final double triggerThreshold = 0.2;
 
@@ -59,7 +63,7 @@ public class Robot {
         shooter = new Shooter(hardwareMap);
         drive = new Drive(hardwareMap, true);
         intake = new Intake(hardwareMap);
-        localization = new Localication(hardwareMap);
+        localization = new Localization(hardwareMap);
 
         allHubs = hardwareMap.getAll(LynxModule.class);
         CtrlHub = allHubs.get(0);
@@ -84,7 +88,7 @@ public class Robot {
         intake.update(gamepad1, gamepad2);
         localization.update(gamepad1);
 
-        setTransportState();
+        setTransportState(gamepad1);
     }
     public void update() {
         voltage = voltageSensor.getVoltage();
@@ -111,9 +115,9 @@ public class Robot {
      *      b - outtake, then change back when released (OUTTAKE, store prev. in returnCase)
      */
 
-    private void setTransportState() {
+    private void setTransportState(Gamepad gamepad1) {
         // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
-        if (transportState == TransportState.POWER_SHOOTER && gamepad.right_trigger > triggerThreshold) {
+        if (transportState == TransportState.POWER_SHOOTER && gamepad1.right_trigger > triggerThreshold) {
             if (shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             }
@@ -126,7 +130,7 @@ public class Robot {
         } else if (gamepad1.b && transportState != TransportState.OUTTAKE) {
             returnCase = transportState;
             transportState = TransportState.OUTTAKE;
-        } else if (!gamepad.b && transportState == TransportState.OUTTAKE) {
+        } else if (!gamepad1.b && transportState == TransportState.OUTTAKE) {
             transportState = returnCase;
         } else {
             transportState = TransportState.HOME;

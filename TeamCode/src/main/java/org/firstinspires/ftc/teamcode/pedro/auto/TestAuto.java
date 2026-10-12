@@ -2,9 +2,8 @@ package org.firstinspires.ftc.teamcode.pedro.auto;
 
 import static com.pedropathing.api.Paths.*;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.startPose;
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -15,17 +14,19 @@ import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.*;
 import static com.pedropathing.ivy.groups.Groups.sequential;
+import static com.pedropathing.ivy.groups.Groups.parallel;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.pedropathing.paths.interpolator.Interpolator;
 
-import org.firstimspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
 @Autonomous(name = "TestAuto", group = "Autonomous")
 public class TestAuto extends LinearOpMode {
-    GlobalVars.inAuto = true;
-    GlobalVars.isRed = true;
+
     Robot robot;
 
     private Follower follower;
@@ -78,7 +79,7 @@ public class TestAuto extends LinearOpMode {
                 follow(follower, shootLeft1()),
                 sequential(
                     waitMs(1000),
-                    instant(() -> { Robot.flowerWedgeIsActive = false; }),
+                    instant(() -> { Robot.flowerWedgeIsActive = false; })
                 )
             ),
             instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
@@ -136,6 +137,8 @@ public class TestAuto extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        inAuto = true;
+        isRed = true;
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = Constants.create(hardwareMap);

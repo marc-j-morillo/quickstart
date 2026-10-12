@@ -144,7 +144,7 @@ public class Intake {
         flowerWedgeRight.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
 
 
-        switch (Drive.transportState) {
+        switch (Robot.transportState) {
             case HOME:
                 intakePower = dormant;
                 transferPower = dormant;
@@ -160,7 +160,7 @@ public class Intake {
                 transferPower = outtaking;
                 blockerPosition = blockerClosed;
                 break;
-            case AUTO_POWER:
+            case POWER_SHOOTER:
                 intakePower = intaking;
                 transferPower = semiTransferring;
                 blockerPosition = blockerClosed;
@@ -191,12 +191,12 @@ public class Intake {
         intake.setPower(intakePower);
         transferMotor.setPower(transferPower);
         transferPollenBlocker.setPosition(blockerPosition);
-        flowerWedgeLeft.setPosition(setFlowerWedge());
-        flowerWedgeRight.setPosition(setFlowerWedge());
+        flowerWedgeLeft.setPosition(setFlowerWedge(gamepad1));
+        flowerWedgeRight.setPosition(setFlowerWedge(gamepad1));
         //transferNectar.setPosition(blockerPosition);
 
 
-        switch (Drive.transportState) {
+        switch (Robot.transportState) {
             case HOME:
                 intakePower = dormant;
                 transferPower = dormant;
@@ -212,7 +212,7 @@ public class Intake {
                 transferPower = semiTransferring;
                 blockerPosition = blockerClosed;
                 break;
-            case AUTO_POWER:
+            case POWER_SHOOTER:
                 intakePower = intaking;
                 transferPower = semiTransferring;
                 blockerPosition = blockerClosed;
@@ -225,7 +225,7 @@ public class Intake {
         }
     }
 
-    public void setFlowerWedge() {
+    public double setFlowerWedge(Gamepad gamepad1) {
         // Raise and lower the flower wedge with the left bumper, 
         // but only if 0.5 seconds have passed since the last press to prevent rapid toggling
         if (gamepad1.left_bumper && flowerWedgeWait.seconds() > 0.5) {

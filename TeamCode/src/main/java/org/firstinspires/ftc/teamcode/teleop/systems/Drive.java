@@ -60,9 +60,9 @@ public class Drive {
         }
 
         if (FieldCentric && hasPinpoint) {
-            fieldCentricDrive();
+            fieldCentricDrive(gamepad1);
         } else {
-            robotCentricDrive();
+            robotCentricDrive(gamepad1);
         }
         frontLeft.setPower(frontLeftPower);
         backLeft.setPower(backLeftPower);
@@ -72,7 +72,7 @@ public class Drive {
 
 
 
-    private void fieldCentricDrive() {
+    private void fieldCentricDrive(Gamepad gamepad1) {
         double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
         double x = gamepad1.left_stick_x;
         rx = gamepad1.right_stick_x;
@@ -93,7 +93,7 @@ public class Drive {
         backRightPower = (rotY + rotX - rx) / denominator;
     }
 
-    private void robotCentricDrive() {
+    private void robotCentricDrive(Gamepad gamepad1) {
         turnController.setP(driveP);
         turnController.setI(driveI);
         turnController.setD(driveD);

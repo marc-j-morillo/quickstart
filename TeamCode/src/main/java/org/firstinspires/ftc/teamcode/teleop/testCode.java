@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionBotX;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionBotY;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+
 
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -11,10 +9,10 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.startPose;
+
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
-import org.firstinspires.ftc.teamcode.teleop.systems.Localization;
-import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
+import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
 import java.util.List;
@@ -22,7 +20,8 @@ import java.util.List;
 @TeleOp(name = "testCode", group = "TeleOp")
 public class testCode extends OpMode {
     Robot robot;
-
+    private ElapsedTime matchTimer = new ElapsedTime();
+    private double oldTime = 0;
 
     @Override
     public void init() {
@@ -48,7 +47,8 @@ public class testCode extends OpMode {
         double loopTime = newTime-oldTime;
         oldTime = newTime;
 
-        robot.update();
+        robot.update(gamepad1, gamepad2);
+        /*
 
         telemetry.addData("Transition Heading", transitionHeading);
         telemetry.addData("Distance To Goal", Transport.distanceFromLimelightToTagInches);
@@ -87,6 +87,7 @@ public class testCode extends OpMode {
         telemetry.addData("BackRight Power", Drive.backRight.getCurrent(CurrentUnit.AMPS));
 //        telemetry.addData("Low Level Color Value", Transport.lowLevel);
 //        telemetry.addData("Transition Heading", Math.toDegrees(transitionHeading));
+*/
         telemetry.update();
     }
 }
