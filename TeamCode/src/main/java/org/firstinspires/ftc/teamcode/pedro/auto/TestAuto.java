@@ -33,7 +33,7 @@ public class TestAuto extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose startandShootPreload = poseFactory.of(54.0612, 8.2201, 90);
+    private final Pose startAndShootPreload = poseFactory.of(54.0612, 8.2201, 90);
     private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
     private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
@@ -68,25 +68,25 @@ public class TestAuto extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-            instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
+            instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
             waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
             waitMs(300),
-            instant(() -> { Robot.transportState = Robot.TransportState.INTAKE; }),
-            instant(() -> { Robot.flowerWedgeIsActive = true; }),
+            instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
+            instant(() -> Robot.flowerWedgeIsActive = true),
             follow(follower, intakeAllianceFlower()),
 
             parallel(
                 follow(follower, shootLeft1()),
                 sequential(
                     waitMs(1000),
-                    instant(() -> { Robot.flowerWedgeIsActive = false; })
+                    instant(() -> Robot.flowerWedgeIsActive = false)
                 )
             ),
-            instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
+            instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
             waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
             waitMs(300),
-            instant(() -> { Robot.transportState = Robot.TransportState.INTAKE; }),
-            instant(() -> { Robot.flowerWedgeIsActive = true; }),
+            instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
+            instant(() -> Robot.flowerWedgeIsActive = true),
 
             follow(follower, intakeLeftFlower()),
 
@@ -94,43 +94,43 @@ public class TestAuto extends LinearOpMode {
                 follow(follower, shootLeft2()),
                 sequential(
                     waitMs(500),
-                    instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
-                    instant(() -> { Robot.flowerWedgeIsActive = false; }),
+                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+                    instant(() -> Robot.flowerWedgeIsActive = false),
                     waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                     waitMs(300)
                 )
             ),
             follow(follower, moveToGarden()),
 
-            instant(() -> { Robot.transportState = Robot.TransportState.INTAKE; }),
+            instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
             follow(follower, intakeGarden()),
 
             parallel(
                 follow(follower, shootGarden()),
                 sequential(
                     waitMs(700),
-                    instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
+                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                     waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                     waitMs(300)
                 )
             ),
 
-            instant(() -> { Robot.flowerWedgeIsActive = true; }),
-            instant(() -> { Robot.transportState = Robot.TransportState.INTAKE; }),
+            instant(() -> Robot.flowerWedgeIsActive = true),
+            instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
             follow(follower, intakeRightFlower()),
             
             parallel(
                 follow(follower, shootFinal()),
                 sequential(
                     waitMs(700),
-                    instant(() -> { Robot.flowerWedgeIsActive = false; }),
-                    instant(() -> { Robot.transportState = Robot.TransportState.POWER_SHOOTER; }),
+                    instant(() -> Robot.flowerWedgeIsActive = false),
+                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                     waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                     waitMs(300)
                 )
             ),
 
-            instant(() -> { Robot.transportState = Robot.TransportState.HOME; }),
+            instant(() -> Robot.transportState = Robot.TransportState.HOME),
             follow(follower, park())
         );
     }
@@ -142,7 +142,7 @@ public class TestAuto extends LinearOpMode {
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
-        follower.setPose(startandShootPreload);
+        follower.setPose(startAndShootPreload);
         follower.update();
 
         waitForStart();
@@ -168,7 +168,7 @@ public class TestAuto extends LinearOpMode {
     }
 
     public Path intakeAllianceFlower() {
-        return curve(startandShootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(startandShootPreload, intakeAllianceFlower);
+        return curve(startAndShootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(startAndShootPreload, intakeAllianceFlower);
     }
 
     public Path shootLeft1() {

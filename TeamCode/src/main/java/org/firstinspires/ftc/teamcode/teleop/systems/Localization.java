@@ -70,18 +70,14 @@ public class Localization {
             //cornerPose = new Pose(113.520177165, 136.4, folower.pose().heading());
         }
         follower.setPose(cornerPose);
-//        Localization.odo.setPosX(Vision.visionBotX, DistanceUnit.INCH);
-//        Localization.odo.setPosY(Vision.visionBotY, DistanceUnit.INCH);
     }
 
     public void resetIMU() {
         Pose newHeadingPose;
         if (isRed) {
             newHeadingPose = new Pose(botX, botY, Math.toRadians(45));
-            //odo.setHeading(Math.toRadians(45), AngleUnit.RADIANS);
         } else {
             newHeadingPose = new Pose(botX, botY, Math.toRadians(135));
-            //odo.setHeading(Math.toRadians(135), AngleUnit.RADIANS);
         }
         follower.setPose(newHeadingPose);
     }

@@ -1,5 +1,5 @@
 
-package org.firstinspires.ftc.teamcode.teleop.systems;
+package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
@@ -9,6 +9,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.Localization;
+
+
+
 import com.qualcomm.robotcore.util.Range;
 
 import com.arcrobotics.ftclib.util.InterpLUT;
@@ -55,6 +61,7 @@ public class Shooter {
     public double shooterpid;
 
     //MOTOR VELOCITY
+    // Note: shooter gearing is 30:60, but that is not accounted for in the LUT or calculations
     public static double shooterVelocity;
 
     //MOTOR TARGETS
@@ -265,8 +272,6 @@ public class Shooter {
         double targetGoalX;
         double targetGoalY;
 
-        double velocityMultiplier = 1;
-
         // Determine target goal coordinates
         if (isRed) {
             targetGoalX = 58.0;
@@ -293,6 +298,7 @@ public class Shooter {
         double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
         
         // Change velocity depending if on we can shoot or if we are driving.
+        double velocityMultiplier;
         if (deltaY < 1) { // Will hit the walls of the goal, so can't shoot
             velocityMultiplier = 0.5;
         } else if (isDriving) {

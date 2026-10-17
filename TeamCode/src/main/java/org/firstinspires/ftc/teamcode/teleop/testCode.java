@@ -2,11 +2,9 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 
 
-import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.startPose;
@@ -26,8 +24,9 @@ public class testCode extends OpMode {
     @Override
     public void init() {
         GlobalVars.inAuto = false;
-        GlobalVars.isRed = false;
+        GlobalVars.isRed = true;
         robot = new Robot(hardwareMap);
+        robot.init(hardwareMap, startPose);
     }
 
     @Override

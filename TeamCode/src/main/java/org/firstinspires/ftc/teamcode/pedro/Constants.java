@@ -1,3 +1,8 @@
+// Tuner: http://192.168.43.1:10158/
+// Docs: https://pedropathing.com/docs/pathing/tuning
+
+
+
 package org.firstinspires.ftc.teamcode.pedro;
 import com.pedropathing.algorithm.Foresight;
 import com.pedropathing.algorithm.ForesightConfig;
@@ -15,10 +20,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Constants {
     public static MecanumConfig drivetrainConfig = new MecanumConfig(
             c -> {
-                c.frontLeftName.set("lf");
-                c.backLeftName.set("lr");
-                c.frontRightName.set("rf");
-                c.backRightName.set("rr");
+                c.frontLeftName.set("frontLeft");
+                c.backLeftName.set("backLeft");
+                c.frontRightName.set("frontRight");
+                c.backRightName.set("backRight");
                 c.frontLeftDirection.set(DcMotorSimple.Direction.REVERSE);
                 c.backLeftDirection.set(DcMotorSimple.Direction.REVERSE);
                 c.frontRightDirection.set(DcMotorSimple.Direction.FORWARD);
@@ -29,13 +34,13 @@ public class Constants {
     public static PinpointConfig localizerConfig = new PinpointConfig(
             c -> {
                 c.name.set("pinpoint");
-                c.xPodOffset.set(2.187);
-                c.yPodOffset.set(-4.572);
-                c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
-                c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+                c.xPodOffset.set(2.187); // CHANGE THIS VALUE
+                c.yPodOffset.set(-4.572); // CHANGE THIS VALUE
+                c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD); // CHANGE THIS VALUE
+                c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD); // CHANGE THIS VALUE
             }
     );
-    public static ForesightConfig foresightConfig = new ForesightConfig(
+    public static ForesightConfig foresightConfig = new ForesightConfig( // CHANGE THESE VALUES
             c -> {
                 Controller primaryTranslationalForward = Controller.proportional(0.3);
                 Controller secondaryTranslationalForward = Controller.proportional(0.1);
