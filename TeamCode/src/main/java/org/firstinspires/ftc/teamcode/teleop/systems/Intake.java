@@ -51,9 +51,9 @@ public class Intake {
 
     //MOTOR POWERS
     public static final double dormant = 0;
-    public static final double intaking = 0.5; // TEMPORARY VALUE
+    public static final double intaking = 0.9; // TEMPORARY VALUE
     public static final double outtaking = intaking * -1;
-    public static final double semiTransferring = intaking * 0.2; // 0.1 power
+    public static final double semiTransferring = intaking * 0.2; // 0.18 power
 
     //SERVO STATES
     public static final double blockerOpen = .8; // TEMPORARY VALUE
@@ -67,17 +67,7 @@ public class Intake {
 
     public static double distanceFromLimelightToTagInches;
 
-    //FSMs:
-    public enum TransportState {
-        HOME,
-        INTAKE,
-        OUTTAKE,
-        POWER_SHOOTER,
-        SHOOT
-    }
 
-    public TransportState transportState = TransportState.HOME;
-    public TransportState returnCase = TransportState.HOME;
 
     
 
@@ -97,14 +87,14 @@ public class Intake {
         
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
         //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         transferPollenBlocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         transferPollenBlocker.setDirection(Servo.Direction.FORWARD);
