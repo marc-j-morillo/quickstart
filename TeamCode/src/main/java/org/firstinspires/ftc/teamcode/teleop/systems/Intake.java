@@ -56,8 +56,8 @@ public class Intake {
     public static final double semiTransferring = intaking * 0.2; // 0.18 power
 
     //SERVO STATES
-    public static final double blockerOpen = .8; // TEMPORARY VALUE
-    public static final double blockerClosed = 0; // TEMPORARY VALUE
+    public static final double blockerOpen = 0.6;
+    public static final double blockerClosed = 0.85;
 
     //FLOWER WEDGE POSITIONS
     public static final double flowerWedgeDown = 0; // TEMPORARY VALUE

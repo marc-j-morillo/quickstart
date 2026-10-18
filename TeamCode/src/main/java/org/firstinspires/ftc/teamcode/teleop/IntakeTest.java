@@ -4,46 +4,21 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.teleop.systems.Localization;
-import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
-
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.startPose;
-
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import java.util.List;
 
-@TeleOp(name = "TransferTest", group = "TeleOp")
-public class TransferTest extends OpMode {
-
-    //  ------------- TURRET -------------
-    //TurretPollen turret;
-    private double turretPosition;
-    public static Servo turretPollenLeft, turretPollenRight;
-
-
+@TeleOp(name = "IntakeTest", group = "TeleOp")
+public class IntakeTest extends OpMode {
     //  ------------- BLOCKER -------------
 
     public Servo blocker;
 
     //SERVO STATES
-    public static final double blockerOpen = 0.6; // TEMPORARY VALUE
-    public static final double blockerClosed = 0.85; // TEMPORARY VALUE
+    public static final double blockerOpen = 0.6;
+    public static final double blockerClosed = 0.85;
     public double blockerPosition = blockerOpen;
-    private ElapsedTime matchTimer = new ElapsedTime();
-    private double oldTime = 0;
 
     //  ------------- INTAKE -------------
 
@@ -72,16 +47,10 @@ public class TransferTest extends OpMode {
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        turretPollenLeft = hardwareMap.get(Servo.class, "turretPollenLeft");
-        turretPollenRight = hardwareMap.get(Servo.class, "turretPollenRight");
-        // turretPollenLeft.setDirection(Servo.Direction.REVERSE);
-        // turretPollenRight.setDirection(Servo.Direction.REVERSE);
-
     }
 
     @Override
     public void start() {
-        matchTimer.reset();
     }
 
     @Override
@@ -101,16 +70,9 @@ public class TransferTest extends OpMode {
         }
         transferMotor.setPower(transferPower);
 
-        // 5 - right
-        // 4 - left
-        turretPosition = gamepad1.left_stick_x;
-        turretPollenLeft.setPosition(turretPosition);
-        turretPollenRight.setPosition(turretPosition);
-
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
-        telemetry.addData("Turret position: ", turretPosition);
 
         telemetry.update();
     }

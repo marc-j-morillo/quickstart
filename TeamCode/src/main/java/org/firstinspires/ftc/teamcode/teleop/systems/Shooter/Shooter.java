@@ -36,9 +36,9 @@ public class Shooter {
 
     public static double turretTargetPositionNectar;   // desired angle
 
-    public static final double turretHardwareLimit = 160;    // max travel from center, degrees
+    public static final double turretHardwareLimit = 120;    // max travel from center, degrees
 
-    public static final double servoRangeDegrees = 320.0;
+    public static final double servoRangeDegrees = 240.0;
 
     // Change these offsets to the actual turret position on the robot, for now they are set to 0
     // Offsets from odometry center to turret center, in inches

@@ -73,13 +73,15 @@ public class Robot {
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
-
     }
 
     public void init(HardwareMap hardwareMap, Pose startPose) {
         localization.createFollower(hardwareMap, startPose);
     }
 
+
+
+    // TELEOP UPDATE LOOP
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
         voltage = voltageSensor.getVoltage();
         voltageMultiplier = nominalVoltage / voltage;
@@ -91,6 +93,8 @@ public class Robot {
 
         setTransportState(gamepad1);
     }
+
+    // AUTO UPDATE LOOP
     public void update() {
         voltage = voltageSensor.getVoltage();
         voltageMultiplier = nominalVoltage / voltage;
