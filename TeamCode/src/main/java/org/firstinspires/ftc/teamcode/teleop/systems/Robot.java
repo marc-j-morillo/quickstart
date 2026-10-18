@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
@@ -126,23 +126,23 @@ public class Robot {
             if (shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             }
-        } else if (gamepad1.a && transportState != TransportState.HOME) {
+        } else if (gamepad1.aWasPressed() && transportState != TransportState.HOME) {
             transportState = TransportState.HOME;
         } else if (gamepad1.right_trigger > triggerThreshold && transportState != TransportState.POWER_SHOOTER) {
             transportState = TransportState.POWER_SHOOTER;
         } else if (gamepad1.left_trigger > triggerThreshold && transportState != TransportState.INTAKE) {
             transportState = TransportState.INTAKE;
-        } else if (gamepad1.b && transportState != TransportState.OUTTAKE) {
+        } else if (gamepad1.bWasPressed() && transportState != TransportState.OUTTAKE) {
             returnCase = transportState;
             transportState = TransportState.OUTTAKE;
-        } else if (!gamepad1.b && transportState == TransportState.OUTTAKE) {
+        } else if (gamepad1.bWasReleased() && transportState == TransportState.OUTTAKE) {
             transportState = returnCase;
         } else {
             transportState = TransportState.HOME;
         }
         
         if (transportState == TransportState.SHOOT || transportState == TransportState.POWER_SHOOTER) {
-            if (gamepad1.a) {
+            if (gamepad1.aWasPressed()) {
                 transportState = TransportState.HOME;
             }
         }

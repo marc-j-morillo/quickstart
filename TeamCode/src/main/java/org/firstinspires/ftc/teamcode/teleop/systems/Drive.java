@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;

@@ -1,10 +1,11 @@
-/*
+
 package org.firstinspires.ftc.teamcode.pedro.auto;
 
 import static com.pedropathing.api.Paths.*;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -23,7 +24,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedDuoRight_ShootLeft", group = "Autonomous")
 public class RedDuoRight_ShootLeft extends LinearOpMode{
@@ -55,19 +56,19 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
         return sequential(
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 follow(follower, intakeAllianceFlower()),
 
 
                 follow(follower, shoot2()),
-
-                waitMs(8000),
-                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 instant(() -> Robot.flowerWedgeIsActive = false),
+
+                waitMs(8000), // TEMPORARY VALUE
+                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
 
 
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
@@ -82,7 +83,7 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
                                 waitMs(700),
                                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(300)
+                                waitMs(waitAfterShoot)
                         )
                 ),
 
@@ -108,7 +109,7 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
                 ),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
 
 
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
@@ -180,4 +181,3 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
         return curve(parkStart, parkControl1, park).linear(parkStart, park);
     }
 }
-*/

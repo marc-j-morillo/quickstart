@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.qualcomm.robotcore.hardware.Gamepad;

@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;

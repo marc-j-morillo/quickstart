@@ -2,8 +2,6 @@
 /*
 package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -19,7 +17,7 @@ public class TurretNectar {
     public TurretNectar(HardwareMap hardwareMap) {
         turretNectarLeft = hardwareMap.get(Servo.class, "turretNectarLeft");
         turretNectarRight = hardwareMap.get(Servo.class, "turretNectarRight");
-        turretNectarLeft.setDirection(Servo.Direction.REVERSE);
+        // turretNectarLeft.setDirection(Servo.Direction.REVERSE);
         // turretNectarRight.setDirection(Servo.Direction.REVERSE);
     }
 

@@ -1,8 +1,8 @@
 
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
@@ -21,7 +21,7 @@ import com.qualcomm.robotcore.util.Range;
 import com.arcrobotics.ftclib.util.InterpLUT;
 
 public class Intake {
-    // ----- Hardware -----
+    // -------------- Hardware --------------
 
     //public DigitalChannel laser;
     public DcMotorEx intake, transferMotor;
@@ -29,7 +29,8 @@ public class Intake {
     //public Servo transferNectarBlocker;
     public Servo flowerWedgeLeft, flowerWedgeRight;
 
-    // ----- Limelight Stuff -------
+    // -------------- Limelight Stuff -------------- (commented out, we don't use a limelight)
+
     //public double limelightMountAngleDegrees = 10;
     
     //public double limelightLensHeightInches = 16.930377953; // distance from the center of the Limelight lens to the floor
@@ -37,7 +38,10 @@ public class Intake {
     //public boolean lowLevel = false; // Color Sensor Values and Logic
     
     // distance from the target to the floor
-    public double goalHeightInches = 65.6;
+    //public double goalHeightInches = 65.6;
+
+
+    // -------------- Power Values --------------
 
     //MOTOR POWER
     public double intakePower, transferPower;
@@ -64,8 +68,6 @@ public class Intake {
     public static final double flowerWedgeUp = .5; // TEMPORARY VALUE
     public boolean flowerWedgeIsDown;
     public ElapsedTime flowerWedgeWait;
-
-    public static double distanceFromLimelightToTagInches;
 
 
 
@@ -125,6 +127,8 @@ public class Intake {
         }
     }
 
+
+    // -------------- AUTONOMOUS UPDATE METHOD --------------
     public void update(boolean flowerWedgeIsActive) {
         intake.setPower(intakePower);
         transferMotor.setPower(transferPower);
@@ -163,7 +167,7 @@ public class Intake {
         }
     }
 
-
+    // -------------- TELEOP UPDATE METHOD --------------
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
 
 //        if (Vision.tX < 2 && Vision.tX > -2 && Vision.validResult) {
@@ -218,7 +222,7 @@ public class Intake {
     public double setFlowerWedge(Gamepad gamepad1) {
         // Raise and lower the flower wedge with the left bumper, 
         // but only if 0.5 seconds have passed since the last press to prevent rapid toggling
-        if (gamepad1.left_bumper && flowerWedgeWait.seconds() > 0.5) {
+        if (gamepad1.leftBumperWasPressed() && flowerWedgeWait.seconds() > 0.5) {
             flowerWedgeWait.reset();
             if (flowerWedgeIsDown) {
                 flowerWedgeIsDown = false;

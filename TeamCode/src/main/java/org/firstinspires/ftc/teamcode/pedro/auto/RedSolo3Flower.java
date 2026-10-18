@@ -2,8 +2,9 @@ package org.firstinspires.ftc.teamcode.pedro.auto;
 
 import static com.pedropathing.api.Paths.*;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -22,7 +23,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedSolo3Flower", group = "Autonomous")
 public class RedSolo3Flower extends LinearOpMode {
@@ -70,7 +71,7 @@ public class RedSolo3Flower extends LinearOpMode {
         return sequential(
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 follow(follower, intakeAllianceFlower()),
@@ -86,7 +87,7 @@ public class RedSolo3Flower extends LinearOpMode {
                 ),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
 
@@ -99,7 +100,7 @@ public class RedSolo3Flower extends LinearOpMode {
                                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                                 instant(() -> Robot.flowerWedgeIsActive = false),
                                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(300)
+                                waitMs(waitAfterShoot)
                         )
                 ),
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
@@ -114,7 +115,7 @@ public class RedSolo3Flower extends LinearOpMode {
                                 waitMs(700),
                                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(300)
+                                waitMs(waitAfterShoot)
                         )
                 ),
 
@@ -129,7 +130,7 @@ public class RedSolo3Flower extends LinearOpMode {
                                 instant(() -> Robot.flowerWedgeIsActive = false),
                                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(300)
+                                waitMs(waitAfterShoot)
                         )
                 ),
 

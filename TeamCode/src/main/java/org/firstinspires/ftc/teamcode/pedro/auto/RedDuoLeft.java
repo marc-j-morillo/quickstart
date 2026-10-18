@@ -2,8 +2,9 @@ package org.firstinspires.ftc.teamcode.pedro.auto;
 
 import static com.pedropathing.api.Paths.*;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -22,7 +23,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedDuoLeft", group = "Autonomous")
 public class RedDuoLeft extends LinearOpMode {
@@ -54,7 +55,7 @@ public class RedDuoLeft extends LinearOpMode {
                 waitMs(5000),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                waitMs(300),
+                waitMs(waitAfterShoot),
 
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
@@ -66,7 +67,7 @@ public class RedDuoLeft extends LinearOpMode {
                         sequential(
                                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(300)
+                                waitMs(waitAfterShoot)
                         )
                 ),
                 waitMs(500),

@@ -1,3 +1,5 @@
+// Maybe add intake to this whenever we actually get an intake?
+
 package org.firstinspires.ftc.teamcode.teleop;
 
 
@@ -55,9 +57,11 @@ public class IntakeTest extends OpMode {
 
     @Override
     public void loop() {
-        if (gamepad1.a){
+        // CONTROLS:
+        // a - switch
+        if (gamepad1.aWasPressed() && blockerPosition == blockerOpen){
             blockerPosition = blockerClosed;
-        } else {
+        } else if (gamepad1.aWasPressed()){
             blockerPosition = blockerOpen;
         }
         blocker.setPosition(blockerPosition);
@@ -69,6 +73,13 @@ public class IntakeTest extends OpMode {
             transferPower = gamepad1.left_trigger * -1;
         }
         transferMotor.setPower(transferPower);
+        telemetry.addLine("CONTROLS:");
+        telemetry.addLine("a - switch blocker position");
+        telemetry.addLine("right trigger - intake, proportional to amount");
+        telemetry.addLine("right trigger - intake, proportional to amount");
+        telemetry.addLine();
+        telemetry.addLine();
+        telemetry.addLine("VALUES:");
 
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
