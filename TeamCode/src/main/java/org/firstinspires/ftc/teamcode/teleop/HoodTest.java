@@ -41,8 +41,18 @@ public class HoodTest extends OpMode {
             hoodPosition += 0.01;
         }
 
-        hoodPollen.setPosition(hoodPosition);
+        if (hoodPosition < 0){
+            hoodPosition = 0;
+        }
 
+        hoodPollen.setPosition(hoodPosition);
+        telemetry.addLine("CONTROLS:");
+        telemetry.addLine("right - increase by 0.1");
+        telemetry.addLine("left - decrease by 0.1");
+        telemetry.addLine("up - increase by 0.01");
+        telemetry.addLine("down - decrease by 0.01");
+        telemetry.addLine();
+        telemetry.addLine();
         telemetry.addData("Hood position: ", hoodPosition);
 
         telemetry.update();
