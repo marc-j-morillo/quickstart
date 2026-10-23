@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop.systems;
 
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
@@ -24,6 +25,8 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
+
 import com.pedropathing.math.Pose;
 
 import java.util.List;
@@ -75,7 +78,7 @@ public class Robot {
         }
     }
 
-    public void init(HardwareMap hardwareMap, Pose startPose) {
+    public void init(HardwareMap hardwareMap) {
         localization.createFollower(hardwareMap, startPose);
     }
 
@@ -83,6 +86,8 @@ public class Robot {
 
     // TELEOP UPDATE LOOP
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
+        setTransportState(gamepad1);
+
         voltage = voltageSensor.getVoltage();
         voltageMultiplier = nominalVoltage / voltage;
 
@@ -90,24 +95,24 @@ public class Robot {
         shooter.update(voltageMultiplier, Drive.isDriving);
         intake.update(gamepad1, gamepad2);
         localization.update(gamepad1);
-
-        setTransportState(gamepad1);
     }
 
     // AUTO UPDATE LOOP
-    public void update() {
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
-
-        shooter.update(voltageMultiplier, false);
-        intake.update(flowerWedgeIsActive);
-        localization.update();
-        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
+    public void update(Pose currentPose) {
         if (transportState == TransportState.POWER_SHOOTER) {
             if (shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             }
         }
+
+        voltage = voltageSensor.getVoltage();
+        voltageMultiplier = nominalVoltage / voltage;
+
+        shooter.update(voltageMultiplier, false);
+        intake.update(flowerWedgeIsActive);
+        FollowerPose.update(currentPose);
+        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
+
     }
 
     /** Current inputs for the controller:

@@ -6,6 +6,7 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -24,6 +25,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedDuoRight_ShootLeft", group = "Autonomous")
@@ -36,9 +38,9 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
     private final Pose start = poseFactory.of(35.0422, 8.4494, 90);
     private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
-    private final Pose shoot2 = poseFactory.of(60, 20, 192);
-    private final Pose moveToGarden = poseFactory.of(20, 6.7067, 180);
+    private final Pose shoot2 = poseFactory.of(60, 20, 180);
     private final Pose intakeGarden = poseFactory.of(7.694, 6.7067, 180);
+    private final Pose intakeGardenControl1 = poseFactory.of(48.4894, 6.2345, 0);
     private final Pose shootGarden = poseFactory.of(60, 20, 192);
     private final Pose intakeRightFlower = poseFactory.of(94.4381, 11.8235, 270);
     private final Pose intakeRightFlowerControl1 = poseFactory.of(94.7193, 26.6519, 0);
@@ -70,10 +72,6 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
 
-
-                instant(() -> Robot.transportState = Robot.TransportState.HOME),
-                follow(follower, moveToGarden()),
-
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 follow(follower, intakeGarden()),
 
@@ -90,15 +88,6 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 follow(follower, intakeRightFlower()),
-
-
-
-
-
-
-
-
-                follow(follower, moveToGarden()),
 
                 parallel(
                         follow(follower, shootLeft()),
@@ -127,13 +116,16 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
         follower.setPose(start);
         follower.update();
 
+        startPose = follower.pose();
+        FollowerPose.update(follower.pose());
+
         waitForStart();
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
-            robot.update();
+            robot.update(follower.pose());
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
@@ -142,11 +134,12 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
             if (follower.currentPath() != null) {
                 telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
                 telemetry.addData("Path number", follower.pathIndex());
+                telemetry.addData("Current path", follower.currentPath());
             }
 
             telemetry.update();
         }
-        GlobalVars.startPose = follower.pose();
+        startPose = follower.pose();
     }
 
     public Path intakeAllianceFlower() {
@@ -157,12 +150,8 @@ public class RedDuoRight_ShootLeft extends LinearOpMode{
         return line(intakeAllianceFlower, shoot2).linear(intakeAllianceFlower, shoot2);
     }
 
-    public Path moveToGarden() {
-        return line(shoot2, moveToGarden).linear(shoot2, moveToGarden);
-    }
-
     public Path intakeGarden() {
-        return line(moveToGarden, intakeGarden).constant(intakeGarden);
+        return curve(shoot2, intakeGardenControl1, intakeGarden).constant(intakeGarden);
     }
 
     public Path shootGarden() {

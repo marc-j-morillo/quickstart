@@ -15,6 +15,8 @@ public class TurretTest extends OpMode {
     private double turretPosition;
     public static Servo turretPollenLeft, turretPollenRight;
 
+    public static int rotLoopCount = 0;
+
 
 
 
@@ -44,6 +46,10 @@ public class TurretTest extends OpMode {
         } else if (gamepad1.dpadDownWasPressed()) {
             turretPosition += 0.01;
         } else if (gamepad1.dpadUpWasPressed()) {
+            turretPosition -= 0.01;
+        } else if (gamepad1.right_trigger > 0.1) {
+            turretPosition += 0.01;
+        } else if (gamepad1.left_trigger > 0.1) {
             turretPosition -= 0.01;
         }
 

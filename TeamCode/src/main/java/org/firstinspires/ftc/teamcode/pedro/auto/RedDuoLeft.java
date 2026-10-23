@@ -5,6 +5,7 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -23,6 +24,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedDuoLeft", group = "Autonomous")
@@ -34,8 +36,8 @@ public class RedDuoLeft extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(8.2382, 132.0915, 90);
-    private final Pose shootLeftStart = poseFactory.of(8.2382, 132.0915, 0);
+    private final Pose start = poseFactory.of(8.2382, 124.7217, 90);
+    private final Pose shootLeftStart = poseFactory.of(8.2382, 124.7217, 0);
     private final Pose shootLeft = poseFactory.of(47.1667, 115, 45);
     private final Pose intakeFlower = poseFactory.of(47.1667, 129.6765, 90);
     private final Pose intakeFlowerSegment1Start = poseFactory.of(47.1667, 129.6765, 45);
@@ -45,7 +47,7 @@ public class RedDuoLeft extends LinearOpMode {
     private final Pose shootLeft2Segment1Heading = poseFactory.of(47.1667, 115, 90);
     private final Pose shootLeft2Segment2Start = poseFactory.of(47.1667, 115, 90);
     private final Pose shootLeft2Segment2End = poseFactory.of(47.1667, 115, 45);
-    private final Pose park = poseFactory.of(15, 120, 90);
+    private final Pose park = poseFactory.of(15, 120, 0);
 
     // Autonomous routine
     public Command autoRoutine() {
@@ -87,13 +89,16 @@ public class RedDuoLeft extends LinearOpMode {
         follower.setPose(shootLeftStart);
         follower.update();
 
+        startPose = follower.pose();
+        FollowerPose.update(follower.pose());
+
         waitForStart();
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
-            robot.update();
+            robot.update(follower.pose());
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
@@ -102,11 +107,12 @@ public class RedDuoLeft extends LinearOpMode {
             if (follower.currentPath() != null) {
                 telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
                 telemetry.addData("Path number", follower.pathIndex());
+                telemetry.addData("Current path", follower.currentPath());
             }
 
             telemetry.update();
         }
-        GlobalVars.startPose = follower.pose();
+        startPose = follower.pose();
     }
 
     public Path shootLeft() {

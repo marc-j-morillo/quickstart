@@ -16,6 +16,7 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -23,6 +24,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "BlueSolo3Flower", group = "Autonomous")
@@ -140,12 +142,14 @@ public class BlueSolo3Flower extends LinearOpMode {
     @Override
     public void runOpMode() {
         inAuto = true;
-        isRed = true;
+        isRed = false;
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
         follower.setPose(startAndShootPreload);
         follower.update();
+        startPose = follower.pose();
+        FollowerPose.update(follower.pose());
 
         waitForStart();
         schedule(autoRoutine());
@@ -153,7 +157,7 @@ public class BlueSolo3Flower extends LinearOpMode {
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
-            robot.update();
+            robot.update(follower.pose());
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
@@ -162,11 +166,12 @@ public class BlueSolo3Flower extends LinearOpMode {
             if (follower.currentPath() != null) {
                 telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
                 telemetry.addData("Path number", follower.pathIndex());
+                telemetry.addData("Current path", follower.currentPath());
             }
 
             telemetry.update();
         }
-        GlobalVars.startPose = follower.pose();
+        startPose = follower.pose();
     }
 
     public Path intakeAllianceFlower() {

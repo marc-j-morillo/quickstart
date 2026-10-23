@@ -4,11 +4,14 @@ package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botX;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botHeading;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Localization;
@@ -189,11 +192,11 @@ public class Shooter {
         // Calculate the offset of the turret from the robot's center 
         // based on whether it's the pollen or nectar turret
         if (isPollen) {
-            xOffset = turretPollenXOffset * Math.sin(Localization.botHeading);
-            yOffset = turretPollenYOffset * Math.cos(Localization.botHeading);
+            xOffset = turretPollenXOffset * Math.sin(botHeading);
+            yOffset = turretPollenYOffset * Math.cos(botHeading);
         } else {
-            xOffset = turretNectarXOffset * Math.sin(Localization.botHeading);
-            yOffset = turretNectarYOffset * Math.cos(Localization.botHeading);
+            xOffset = turretNectarXOffset * Math.sin(botHeading);
+            yOffset = turretNectarYOffset * Math.cos(botHeading);
         }
 
         double targetGoalX;
@@ -203,21 +206,21 @@ public class Shooter {
         if (isRed) targetGoalX = 58.0;
         else targetGoalX = 84.0;
 
-        if (Localization.botY < 61.0) targetGoalY = 61.0;
-        else if (Localization.botY > 83.0) targetGoalY = 83.0; 
-        else targetGoalY = Localization.botY;
+        if (botY < 61.0) targetGoalY = 61.0;
+        else if (botY > 83.0) targetGoalY = 83.0; 
+        else targetGoalY = botY;
 
-        double deltaX = targetGoalX - Localization.botX;
-        double deltaY = targetGoalY - Localization.botY;
+        double deltaX = targetGoalX - botX;
+        double deltaY = targetGoalY - botY;
 
         double goalAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
 
-        double turretTarget = goalAngle - Localization.botHeading;
+        double turretTarget = goalAngle - botHeading;
 
         turretTarget = angleWrap(turretTarget);
         turretTarget = clampToLimit(turretTarget);
         turretTarget = degreesToServoPosition(turretTarget);
-        return turretTarget;
+        return Range.clip(turretTarget, 0.01, 0.99);
     }
 
     // -------------------------------- HOOD METHODS ---------------------------------
@@ -229,11 +232,11 @@ public class Shooter {
         // Calculate the offset of the turret from the robot's center 
         // based on whether it's the pollen or nectar turret
         if (isPollen) {
-            xOffset = turretPollenXOffset * Math.sin(Localization.botHeading);
-            yOffset = turretPollenYOffset * Math.cos(Localization.botHeading);
+            xOffset = turretPollenXOffset * Math.sin(botHeading);
+            yOffset = turretPollenYOffset * Math.cos(botHeading);
         } else {
-            xOffset = turretNectarXOffset * Math.sin(Localization.botHeading);
-            yOffset = turretNectarYOffset * Math.cos(Localization.botHeading);
+            xOffset = turretNectarXOffset * Math.sin(botHeading);
+            yOffset = turretNectarYOffset * Math.cos(botHeading);
         }
 
         double targetGoalX;
@@ -243,13 +246,16 @@ public class Shooter {
         if (isRed) targetGoalX = 58.0;
         else targetGoalX = 84.0;
 
-        if (Localization.botY < 51.0) targetGoalY = 61.0;
-        else if (Localization.botY > 93.0) targetGoalY = 83.0;
-        else targetGoalY = Localization.botY;
+        if (botY < 51.0) targetGoalY = 61.0;
+        else if (botY > 93.0) targetGoalY = 83.0;
+        else targetGoalY = botY;
+
+        targetGoalX += xOffset;
+        targetGoalY += yOffset;
 
         // Calculate Distance Vector
-        double deltaX = targetGoalX - Localization.botX;
-        double deltaY = targetGoalY - Localization.botY;
+        double deltaX = targetGoalX - botX;
+        double deltaY = targetGoalY - botY;
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
 
         // Lookup Hood Angle and return
@@ -279,17 +285,17 @@ public class Shooter {
             targetGoalX = 84.0;
         }
 
-        if (Localization.botY < 51.0) {
+        if (botY < 56.0) {
             targetGoalY = 61.0;
-        } else if (Localization.botY > 93.0) {
+        } else if (botY > 88.0) {
             targetGoalY = 83.0;
         } else {
-            targetGoalY = Localization.botY;
+            targetGoalY = botY;
         }
 
         // Calculate Distance Vector
-        double deltaX = targetGoalX - Localization.botX;
-        double deltaY = targetGoalY - Localization.botY;
+        double deltaX = targetGoalX - botX;
+        double deltaY = targetGoalY - botY;
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
         
 

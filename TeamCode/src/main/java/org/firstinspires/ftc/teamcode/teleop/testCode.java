@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.startPose;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
@@ -26,7 +26,7 @@ public class testCode extends OpMode {
         GlobalVars.inAuto = false;
         GlobalVars.isRed = true;
         robot = new Robot(hardwareMap);
-        robot.init(hardwareMap, startPose);
+        robot.init(hardwareMap);
     }
 
     @Override

@@ -25,6 +25,8 @@ public class IntakeTest extends OpMode {
     //  ------------- INTAKE -------------
 
     public DcMotorEx transferMotor;
+    public DcMotorEx intakeMotor;
+    public double intakePower = dormant;
 
 
     //MOTOR POWERS
@@ -43,44 +45,60 @@ public class IntakeTest extends OpMode {
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
+        intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
+        //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
     }
 
     @Override
-    public void start() {
-    }
+    public void start() {}
 
     @Override
     public void loop() {
-        // CONTROLS:
-        // a - switch
-        if (gamepad1.aWasPressed() && blockerPosition == blockerOpen){
-            blockerPosition = blockerClosed;
-        } else if (gamepad1.aWasPressed()){
-            blockerPosition = blockerOpen;
+        if (gamepad1.aWasPressed()) {
+            if (blockerPosition == blockerOpen) {
+                blockerPosition = blockerClosed;
+            } else {
+                blockerPosition = blockerOpen;
+            }
         }
         blocker.setPosition(blockerPosition);
 
 
         if (gamepad1.right_trigger > 0.1) {
             transferPower = gamepad1.right_trigger;
-        } else {
+            intakePower = gamepad1.right_trigger;
+        } else if (gamepad1.left_trigger > 0.1){
             transferPower = gamepad1.left_trigger * -1;
+            intakePower = gamepad1.left_trigger * -1;
+        } else if (gamepad1.rightBumperWasPressed()) {
+            transferPower = 0.9;
+            intakePower = 0.9;
+        } else if (gamepad1.leftBumperWasPressed()) {
+            transferPower = 0;
+            intakePower = 0;
         }
+
         transferMotor.setPower(transferPower);
+        intakeMotor.setPower(intakePower);
         telemetry.addLine("CONTROLS:");
         telemetry.addLine("a - switch blocker position");
         telemetry.addLine("right trigger - intake, proportional to amount");
-        telemetry.addLine("right trigger - intake, proportional to amount");
+        telemetry.addLine("left trigger - outtake, proportional to amount");
         telemetry.addLine();
         telemetry.addLine();
-        telemetry.addLine("VALUES:");
 
+        telemetry.addLine("VALUES:");
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);

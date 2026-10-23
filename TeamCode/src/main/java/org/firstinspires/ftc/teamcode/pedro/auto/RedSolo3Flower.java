@@ -5,6 +5,7 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
@@ -23,6 +24,7 @@ import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
 @Autonomous(name = "RedSolo3Flower", group = "Autonomous")
@@ -149,13 +151,16 @@ public class RedSolo3Flower extends LinearOpMode {
         follower.setPose(startAndShootPreload);
         follower.update();
 
+        startPose = follower.pose();
+        FollowerPose.update(follower.pose());
+
         waitForStart();
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
-            robot.update();
+            robot.update(follower.pose());
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());
@@ -164,11 +169,12 @@ public class RedSolo3Flower extends LinearOpMode {
             if (follower.currentPath() != null) {
                 telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
                 telemetry.addData("Path number", follower.pathIndex());
+                telemetry.addData("Current path", follower.currentPath());
             }
 
             telemetry.update();
         }
-        GlobalVars.startPose = follower.pose();
+        startPose = follower.pose();
     }
 
     public Path intakeAllianceFlower() {

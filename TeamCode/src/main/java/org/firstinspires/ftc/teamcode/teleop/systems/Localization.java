@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botX;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botHeading;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -11,9 +14,6 @@ import com.pedropathing.math.Pose;
 
 public class Localization {
     //public static GoBildaPinpointDriver odo;
-    public static double botHeading;
-    public static double botX;
-    public static double botY;
 
     Follower follower;
     Pose robotPose;
@@ -45,6 +45,13 @@ public class Localization {
     }
 
     public void update(Gamepad gamepad1) {
+        follower.update();
+        robotPose = follower.pose();
+
+        botX = robotPose.x();
+        botY = robotPose.y();
+        botHeading = Math.toDegrees(robotPose.heading());
+
         if (gamepad1.dpad_down) {
             resetIMU();
         }
@@ -75,9 +82,9 @@ public class Localization {
     public void resetIMU() {
         Pose newHeadingPose;
         if (isRed) {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(45));
+            newHeadingPose = new Pose(botX, botY, Math.toRadians(0));
         } else {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(135));
+            newHeadingPose = new Pose(botX, botY, Math.toRadians(180));
         }
         follower.setPose(newHeadingPose);
     }
