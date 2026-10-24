@@ -220,7 +220,7 @@ public class Intake {
     }
 
     public double setFlowerWedge(Gamepad gamepad1) {
-        // Raise and lower the flower wedge with the left bumper, 
+        // Raise and lower the flower wedge with the left bumper,
         // but only if 0.5 seconds have passed since the last press to prevent rapid toggling
         if (gamepad1.leftBumperWasPressed() && flowerWedgeWait.seconds() > 0.5) {
             flowerWedgeWait.reset();

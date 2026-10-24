@@ -4,6 +4,7 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.b
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botHeading;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -40,11 +41,15 @@ public class Drive {
 
     public Drive(HardwareMap hardwareMap, boolean fieldCentric) {
         follower = Constants.create(hardwareMap);
+        follower.setPose(startPose);
+        follower.update();
 
         this.fieldCentric = fieldCentric;
     }
 
     public void update(Gamepad gamepad1) {
+
+        // Set isDriving and fieldCentric according to gamepad imputs
         if (Math.abs(gamepad1.left_stick_x) > stickThreshold
                 || Math.abs(gamepad1.left_stick_y) > stickThreshold
                 || Math.abs(gamepad1.right_stick_x) > stickThreshold) {
@@ -57,6 +62,16 @@ public class Drive {
             fieldCentric = !fieldCentric;
         }
 
+        // Take inputs to relocalize
+        if (gamepad1.dpadDownWasPressed()) {
+            resetIMU();
+        }
+
+        if (gamepad1.shareWasPressed()) {
+            resetLocalization();
+        }
+
+        // Drive
         if (fieldCentric) {
             DrivePowers powers = ManualDrive.fieldCentric(
                     -gamepad1.left_stick_y,
@@ -72,21 +87,13 @@ public class Drive {
                     gamepad1.right_stick_x
             );
         }
-
         follower.update();
-        robotPose = follower.pose();
 
+        // Update the FolowerPose.java variables
+        robotPose = follower.pose();
         botX = robotPose.x();
         botY = robotPose.y();
         botHeading = Math.toDegrees(robotPose.heading());
-
-        if (gamepad1.dpadDownWasPressed()) {
-            resetIMU();
-        }
-
-        if (gamepad1.shareWasPressed()) {
-            resetLocalization();
-        }
     }
 
     public void update() {

@@ -11,11 +11,8 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.b
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
-import org.firstinspires.ftc.teamcode.teleop.systems.Localization;
-
 
 
 import com.qualcomm.robotcore.util.Range;

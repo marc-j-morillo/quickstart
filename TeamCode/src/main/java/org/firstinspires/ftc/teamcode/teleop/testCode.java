@@ -26,7 +26,6 @@ public class testCode extends OpMode {
         GlobalVars.inAuto = false;
         GlobalVars.isRed = true;
         robot = new Robot(hardwareMap);
-        robot.init(hardwareMap);
     }
 
     @Override

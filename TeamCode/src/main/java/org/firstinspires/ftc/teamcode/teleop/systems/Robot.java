@@ -35,7 +35,6 @@ public class Robot {
     Shooter shooter;
     Drive drive;
     Intake intake;
-    Localization localization;
 
     public VoltageSensor voltageSensor;
     public double voltage;
@@ -67,7 +66,6 @@ public class Robot {
         shooter = new Shooter(hardwareMap);
         drive = new Drive(hardwareMap, true);
         intake = new Intake(hardwareMap);
-        localization = new Localization(hardwareMap);
 
         allHubs = hardwareMap.getAll(LynxModule.class);
         CtrlHub = allHubs.get(0);
@@ -76,10 +74,6 @@ public class Robot {
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
-    }
-
-    public void init(HardwareMap hardwareMap) {
-        localization.createFollower(hardwareMap, startPose);
     }
 
 
@@ -94,7 +88,6 @@ public class Robot {
         drive.update(gamepad1);
         shooter.update(voltageMultiplier, Drive.isDriving);
         intake.update(gamepad1, gamepad2);
-        localization.update(gamepad1);
     }
 
     // AUTO UPDATE LOOP
@@ -108,9 +101,10 @@ public class Robot {
         voltage = voltageSensor.getVoltage();
         voltageMultiplier = nominalVoltage / voltage;
 
+        FollowerPose.update(currentPose);
         shooter.update(voltageMultiplier, false);
         intake.update(flowerWedgeIsActive);
-        FollowerPose.update(currentPose);
+
         // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
 
     }
