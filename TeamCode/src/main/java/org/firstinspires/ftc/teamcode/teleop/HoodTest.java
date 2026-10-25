@@ -7,26 +7,32 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
+
 @TeleOp(name = "HoodTest", group = "TeleOp")
 public class HoodTest extends OpMode {
 
-    //  ------------- TURRET -------------
+    //  ------------- HOOD -------------
     //TurretPollen turret;
-    public static Servo hoodPollen;
+    HoodPollen hood;
+
     public static double hoodPosition = 0;
+
+    public static double hoodMin = 0;
+
+    public static double hoodMax = 0.3;
 
 
 
 
     @Override
     public void init() {
-        hoodPollen = hardwareMap.get(Servo.class, "hoodPollen");
-        // hoodPollen.setDirection(Servo.Direction.REVERSE);
+        hood = new HoodPollen(hardwareMap);
     }
 
     @Override
     public void start() {
-        hoodPollen.setPosition(hoodPosition);
+
     }
 
     @Override
@@ -41,11 +47,13 @@ public class HoodTest extends OpMode {
             hoodPosition += 0.01;
         }
 
-        if (hoodPosition < 0){
-            hoodPosition = 0;
+        if (hoodPosition < hoodMin){
+            hoodPosition = hoodMin;
+        } else if (hoodPosition > hoodMax) {
+            hoodPosition = hoodMax;
         }
 
-        hoodPollen.setPosition(hoodPosition);
+        hood.update(hoodPosition);
         telemetry.addLine("CONTROLS:");
         telemetry.addLine("right - increase by 0.1");
         telemetry.addLine("left - decrease by 0.1");

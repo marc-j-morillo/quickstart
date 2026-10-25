@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -11,7 +12,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
+
 @TeleOp(name = "IntakeTest", group = "TeleOp")
+@Configurable
 public class IntakeTest extends OpMode {
     //  ------------- BLOCKER -------------
 
@@ -30,17 +34,29 @@ public class IntakeTest extends OpMode {
 
 
     //MOTOR POWERS
-    public static final double dormant = 0;
-    public static final double intaking = 0.5; // TEMPORARY VALUE
-    public static final double outtaking = intaking * -1;
-    public static final double semiTransferring = intaking * 0.2; // 0.1 power
+    public static double dormant = 0;
+    public static double intaking = 0.5; // TEMPORARY VALUE
+    public static double outtaking = intaking * -1;
+    public static double semiTransferring = intaking * 0.2; // 0.1 power
 
     private double transferPower = dormant;
 
 
+
+    // ------------- FLYWHEEL -------------
+    Flywheel flywheel;
+
+    public static double flywheelTarget = 1000;
+    public double flywheelActual = 0;
+
+    public boolean isAtTarget = false;
+
+    public double power = 0;
+
+
     @Override
     public void init() {
-        blocker = hardwareMap.get(Servo.class, "blocker");
+        blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
 
 
@@ -58,6 +74,8 @@ public class IntakeTest extends OpMode {
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
+
+        flywheel = new Flywheel(hardwareMap);
     }
 
     @Override
@@ -78,16 +96,34 @@ public class IntakeTest extends OpMode {
         if (gamepad1.right_trigger > 0.1) {
             transferPower = gamepad1.right_trigger;
             intakePower = gamepad1.right_trigger;
-        } else if (gamepad1.left_trigger > 0.1){
+        } else if (gamepad1.left_trigger > 0.1) {
             transferPower = gamepad1.left_trigger * -1;
             intakePower = gamepad1.left_trigger * -1;
-        } else if (gamepad1.rightBumperWasPressed()) {
-            transferPower = 0.9;
-            intakePower = 0.9;
-        } else if (gamepad1.leftBumperWasPressed()) {
-            transferPower = 0;
+        } else if (gamepad1.right_bumper) {
+            transferPower = intaking;
+            intakePower = semiTransferring;
+        } else if (gamepad1.left_bumper) {
+            transferPower = outtaking;
+            intakePower = outtaking;
+        } else {
             intakePower = 0;
+            transferPower = 0;
         }
+
+
+        flywheelActual = flywheel.getVelocity();
+
+        isAtTarget = flywheelActual >= flywheelTarget;
+
+        if (!isAtTarget) {
+            power = 1;
+        } else {
+            power = 0;
+        }
+
+        flywheel.update(power);
+
+
 
         transferMotor.setPower(transferPower);
         intakeMotor.setPower(intakePower);
@@ -95,6 +131,8 @@ public class IntakeTest extends OpMode {
         telemetry.addLine("a - switch blocker position");
         telemetry.addLine("right trigger - intake, proportional to amount");
         telemetry.addLine("left trigger - outtake, proportional to amount");
+        telemetry.addLine("right button - Only intake running in");
+        telemetry.addLine("left button - outtake at 100%");
         telemetry.addLine();
         telemetry.addLine();
 

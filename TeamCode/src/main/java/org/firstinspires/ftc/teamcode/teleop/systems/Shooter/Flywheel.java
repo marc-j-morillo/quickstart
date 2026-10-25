@@ -1,3 +1,5 @@
+// Change the constuctor to
+
 package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
 import com.arcrobotics.ftclib.hardware.motors.Motor;
@@ -11,19 +13,23 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.util.InterpLUT;
 
 public class Flywheel {
-    public static MotorEx leftShooter, rightShooter;
+    public static MotorEx shooter1, shooter2;
     public static MotorGroup shooter;
 
     public Flywheel(HardwareMap hardwareMap) {
-        leftShooter = new MotorEx(hardwareMap, "leftShooter", Motor.GoBILDA.BARE);
-        rightShooter = new MotorEx(hardwareMap, "rightShooter", Motor.GoBILDA.BARE);
+        shooter1 = new MotorEx(hardwareMap, "shooter1", Motor.GoBILDA.BARE);
+        shooter2 = new MotorEx(hardwareMap, "shooter2", Motor.GoBILDA.BARE);
 
-        rightShooter.setInverted(true); // May change to leftShooter.setInverted(true)
-
-        shooter = new MotorGroup(leftShooter, rightShooter);
+        shooter1.setInverted(true);
+        shooter2.setInverted(true);
+        shooter = new MotorGroup(shooter1, shooter2);
     }
 
     public void update(double power) {
         shooter.set(power);
+    }
+
+    public int getVelocity() {
+        return (int)(shooter1.getVelocity());
     }
 }

@@ -14,6 +14,7 @@ public class HoodPollen {
 
     public HoodPollen(HardwareMap hardwareMap) {
         hoodPollen = hardwareMap.get(Servo.class, "hoodPollen");
+        hoodPollen.setDirection(Servo.Direction.REVERSE);
     }
 
     public void update(double hoodTargetPosition) {

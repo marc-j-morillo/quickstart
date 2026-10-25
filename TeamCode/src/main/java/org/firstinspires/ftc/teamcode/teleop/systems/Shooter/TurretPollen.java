@@ -14,7 +14,7 @@ public class TurretPollen {
     }
 
     public void update(double turretTargetPosition) {
-        turretPollenLeft.setPosition(turretTargetPosition + 0.01);
-        turretPollenRight.setPosition(turretTargetPosition - 0.01);
+        turretPollenLeft.setPosition(turretTargetPosition + 0.02);
+        turretPollenRight.setPosition(turretTargetPosition - 0.02);
     }
 }

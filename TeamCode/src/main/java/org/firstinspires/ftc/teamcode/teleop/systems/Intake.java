@@ -207,7 +207,7 @@ public class Intake {
                 blockerPosition = blockerClosed;
                 break;
             case POWER_SHOOTER:
-                intakePower = intaking;
+                intakePower = semiTransferring;
                 transferPower = semiTransferring;
                 blockerPosition = blockerClosed;
                 break;

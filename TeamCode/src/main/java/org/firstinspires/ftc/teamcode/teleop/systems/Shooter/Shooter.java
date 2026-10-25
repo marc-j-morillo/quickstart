@@ -61,7 +61,6 @@ public class Shooter {
     public double shooterpid;
 
     //MOTOR VELOCITY
-    // Note: shooter gearing is 30:60, but that is not accounted for in the LUT or calculations
     public static double shooterVelocity;
 
     //MOTOR TARGETS
@@ -119,7 +118,7 @@ public class Shooter {
             kV = .000400186335403727; // Change these values
         }
         
-        shooterVelocity = Flywheel.leftShooter.getVelocity();
+        shooterVelocity = flywheel.getVelocity();
         shooterController.setP(shooterp);
         shooterController.setF(kV * voltageMultiplier);
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
