@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.teleop;
+package org.firstinspires.ftc.teamcode.teleop.hardwaretests;
 
 
 
@@ -50,7 +50,7 @@ public class FlowerWedgeTest extends OpMode {
 
     @Override
     public void init() {
-        blocker = hardwareMap.get(Servo.class, "blocker");
+        blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
 
 

@@ -126,7 +126,7 @@ public class BlueSolo2Flower extends LinearOpMode {
         isRed = false;
         robot = new Robot(hardwareMap);
         Scheduler.reset();
-        follower = Constants.create(hardwareMap);
+        follower = robot.getFollower();
         follower.setPose(startAndShootPreload);
         follower.update();
 

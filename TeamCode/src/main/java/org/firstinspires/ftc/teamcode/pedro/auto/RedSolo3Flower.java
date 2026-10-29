@@ -147,7 +147,7 @@ public class RedSolo3Flower extends LinearOpMode {
         isRed = true;
         robot = new Robot(hardwareMap);
         Scheduler.reset();
-        follower = Constants.create(hardwareMap);
+        follower = robot.getFollower();
         follower.setPose(startAndShootPreload);
         follower.update();
 

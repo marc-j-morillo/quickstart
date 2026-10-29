@@ -77,7 +77,7 @@ public class ActuallyEverythingTest extends OpMode {
     // ------------- TURRET -------------
 
     TurretPollen turret;
-    public static double turretPosition;
+    public static double turretPosition = .5;
 
 
     // ------------- PIDF CONTROLLER -------------
@@ -101,14 +101,14 @@ public class ActuallyEverythingTest extends OpMode {
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        //transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        intakeMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

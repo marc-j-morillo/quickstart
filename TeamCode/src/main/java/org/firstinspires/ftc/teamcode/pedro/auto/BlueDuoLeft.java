@@ -85,7 +85,7 @@ public class BlueDuoLeft extends LinearOpMode {
         isRed = false;
         robot = new Robot(hardwareMap);
         Scheduler.reset();
-        follower = Constants.create(hardwareMap);
+        follower = robot.getFollower();
         follower.setPose(start);
         follower.update();
 

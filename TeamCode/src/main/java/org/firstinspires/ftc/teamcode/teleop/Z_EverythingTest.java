@@ -6,14 +6,17 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
@@ -35,6 +38,8 @@ public class Z_EverythingTest extends OpMode {
 
     public DcMotorEx transferMotor;
     public DcMotorEx intakeMotor;
+
+    public DcMotorEx leftFront, leftRear, rightFront, rightRear;
     public double intakePower = dormant;
     public double transferPower = dormant;
 
@@ -49,6 +54,7 @@ public class Z_EverythingTest extends OpMode {
     public double outtaking = intaking * -1;
     public static double transferMult = 0.7;
     public double semiTransferring = intaking * transferMult;
+    public GoBildaPinpointDriver pinpoint;
 
 
     // ------------- FLYWHEEL -------------
@@ -83,9 +89,6 @@ public class Z_EverythingTest extends OpMode {
 
     public static  PIDFController shooterController;
 
-    public static double shooterp = 0.007, shooteri = 0, shooterd = 0, kV = .000400186335403727, kS = .001;
-    public static double shooterpid;
-
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -95,18 +98,33 @@ public class Z_EverythingTest extends OpMode {
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        //transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        intakeMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        leftFront = hardwareMap.get(DcMotorEx.class, "frontLeft");
+        leftRear = hardwareMap.get(DcMotorEx.class, "backLeft");
+        rightFront = hardwareMap.get(DcMotorEx.class, "frontRight");
+        rightRear = hardwareMap.get(DcMotorEx.class, "backRight");
+
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightRear.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        for (DcMotorEx m : new DcMotorEx[]{leftFront, leftRear, rightFront, rightRear}) {
+            m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
 
 
         flywheel = new Flywheel(hardwareMap);
@@ -115,11 +133,14 @@ public class Z_EverythingTest extends OpMode {
 
         turret = new TurretPollen(hardwareMap);
 
-        shooterController = new PIDFController(shooterp, shooteri, shooterd, kV);
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        pinpoint.resetPosAndIMU();
     }
 
     @Override
-    public void start() {}
+    public void start() {
+        pinpoint.setHeading(90, AngleUnit.DEGREES);
+    }
 
     @Override
     public void loop() {
@@ -168,7 +189,7 @@ public class Z_EverythingTest extends OpMode {
         transferMotor.setPower(transferPower);
         intakeMotor.setPower(intakePower);
 
-
+        /*
         flywheelActual = flywheel.getVelocity();
 
         isAtTarget = flywheelActual >= flywheelTarget;
@@ -183,16 +204,19 @@ public class Z_EverythingTest extends OpMode {
         shooterController.setP(shooterp);
         shooterController.setF(kV);
         shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * kS);
-        flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
+        flywheel.update(Range.clip(shooterpid, -1.0, 1.0));*/
 
 
-        hood.update(hoodPosition);
+        //hood.update(hoodPosition);
 
 
 
-        turret.update(turretPosition);
+        //turret.update(turretPosition);
 
+        driveMecanum();
+        pinpoint.update();
 
+ 
 
 
 
@@ -204,4 +228,41 @@ public class Z_EverythingTest extends OpMode {
 
         telemetry.update();
     }
+
+    private void driveMecanum() {
+        double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
+        double x = gamepad1.left_stick_x;
+        double rx = gamepad1.right_stick_x;
+
+        // This button choice was made so that it is hard to hit on accident,
+        // it can be freely changed based on preference.
+        // The equivalent button is start on Xbox-style controllers.
+        if (gamepad1.options) {
+            pinpoint.setHeading(90, AngleUnit.DEGREES);
+        }
+
+        double botHeading = pinpoint.getHeading(AngleUnit.RADIANS);
+
+        // Rotate the movement direction counter to the bot's rotation
+        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+
+        rotX = rotX * 1.1;  // Counteract imperfect strafing
+
+        // Denominator is the largest motor power (absolute value) or 1
+        // This ensures all the powers maintain the same ratio,
+        // but only if at least one is out of the range [-1, 1]
+        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        double frontLeftPower = (rotY + rotX + rx) / denominator;
+        double backLeftPower = (rotY - rotX + rx) / denominator;
+        double frontRightPower = (rotY - rotX - rx) / denominator;
+        double backRightPower = (rotY + rotX - rx) / denominator;
+
+        leftFront.setPower(frontLeftPower);
+        leftRear.setPower(backLeftPower);
+        rightFront.setPower(frontRightPower);
+        rightRear.setPower(backRightPower);
+    }
+
+
 }

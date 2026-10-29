@@ -28,9 +28,12 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 
 import com.pedropathing.math.Pose;
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
 import java.util.List;
 
+@Configurable
 public class Robot {
     Shooter shooter;
     Drive drive;
@@ -38,16 +41,16 @@ public class Robot {
 
     public VoltageSensor voltageSensor;
     public double voltage;
-    public static final double nominalVoltage = 14.0;
+    public static double nominalVoltage = 14.0;
     public double voltageMultiplier;
 
-    public static final double triggerThreshold = 0.2;
+    public static double triggerThreshold = 0.2;
 
     public List<LynxModule> allHubs;
     public LynxModule CtrlHub;
     public LynxModule ExpHub;
 
-    public static boolean flowerWedgeIsActive = false; // Auto only
+    @IgnoreConfigurable public static boolean flowerWedgeIsActive = false; // Auto only
 
     //FSMs
     public static enum TransportState {
@@ -57,8 +60,8 @@ public class Robot {
         POWER_SHOOTER,
         SHOOT
     }
-    public static TransportState transportState = TransportState.HOME;
-    public static TransportState returnCase = TransportState.HOME;
+    @IgnoreConfigurable public static TransportState transportState = TransportState.HOME;
+    private boolean shotCancelled = false; // set by a, cleared when right trigger is released
 
 
     public Robot(HardwareMap hardwareMap) {
@@ -77,6 +80,11 @@ public class Robot {
     }
 
 
+
+    // Autos path with this follower so only one Follower/Pinpoint localizer exists
+    public Follower getFollower() {
+        return drive.follower;
+    }
 
     // TELEOP UPDATE LOOP
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
@@ -109,41 +117,42 @@ public class Robot {
 
     }
 
-    /** Current inputs for the controller:
-     *      left trigger - intake (INTAKE)
-     * 
-     *      right trigger - "power up" shooter and shoot (POWER_SHOOTER and SHOOT)
+    /** Current inputs for the controller (all are hold-to-run, nothing held = HOME):
+     *      right trigger - "power up" shooter and shoot (POWER_SHOOTER, then SHOOT once in range)
      *          when powering/shooting, cannot drive
-     *          a - reset to nothing (if shooting), can shoot (HOME)
-     * 
-     *      b - outtake, then change back when released (OUTTAKE, store prev. in returnCase)
+     *          a - cancel the shot (HOME) until right trigger is released
+     *
+     *      left trigger - intake (INTAKE)
+     *
+     *      b - outtake (OUTTAKE)
      */
 
     private void setTransportState(Gamepad gamepad1) {
-        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
-        if (transportState == TransportState.POWER_SHOOTER && gamepad1.right_trigger > triggerThreshold) {
-            if (shooter.inRange()) {
+        // *WasPressed() clears itself when read, so read it exactly once per loop
+        boolean cancelPressed = gamepad1.aWasPressed();
+        boolean shootHeld = gamepad1.right_trigger > triggerThreshold;
+        boolean intakeHeld = gamepad1.left_trigger > triggerThreshold;
+
+        if (!shootHeld) {
+            shotCancelled = false;
+        } else if (cancelPressed) {
+            shotCancelled = true;
+        }
+
+        if (shootHeld && !shotCancelled) {
+            // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity,
+            // then stay in SHOOT until the trigger is released
+            if (transportState == TransportState.POWER_SHOOTER && shooter.inRange()) {
                 transportState = TransportState.SHOOT;
+            } else if (transportState != TransportState.SHOOT) {
+                transportState = TransportState.POWER_SHOOTER;
             }
-        } else if (gamepad1.aWasPressed() && transportState != TransportState.HOME) {
-            transportState = TransportState.HOME;
-        } else if (gamepad1.right_trigger > triggerThreshold && transportState != TransportState.POWER_SHOOTER) {
-            transportState = TransportState.POWER_SHOOTER;
-        } else if (gamepad1.left_trigger > triggerThreshold && transportState != TransportState.INTAKE) {
+        } else if (intakeHeld) {
             transportState = TransportState.INTAKE;
-        } else if (gamepad1.bWasPressed() && transportState != TransportState.OUTTAKE) {
-            returnCase = transportState;
+        } else if (gamepad1.b) {
             transportState = TransportState.OUTTAKE;
-        } else if (gamepad1.bWasReleased() && transportState == TransportState.OUTTAKE) {
-            transportState = returnCase;
         } else {
             transportState = TransportState.HOME;
-        }
-        
-        if (transportState == TransportState.SHOOT || transportState == TransportState.POWER_SHOOTER) {
-            if (gamepad1.aWasPressed()) {
-                transportState = TransportState.HOME;
-            }
         }
     }
 }
