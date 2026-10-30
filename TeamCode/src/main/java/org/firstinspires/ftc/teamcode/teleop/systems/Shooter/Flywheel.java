@@ -13,20 +13,22 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.util.InterpLUT;
 
 public class Flywheel {
-    public static MotorEx shooter1, shooter2;
+    public static DcMotorEx shooter1, shooter2;
     public static MotorGroup shooter;
 
     public Flywheel(HardwareMap hardwareMap) {
-        shooter1 = new MotorEx(hardwareMap, "shooter1", Motor.GoBILDA.BARE);
-        shooter2 = new MotorEx(hardwareMap, "shooter2", Motor.GoBILDA.BARE);
+        shooter1 = hardwareMap.get(DcMotorEx.class, "shooter1");
+        //shooter2 = new DcMotorEx(hardwareMap, "shooter2");
 
-        shooter1.setInverted(true);
-        shooter2.setInverted(true);
-        shooter = new MotorGroup(shooter1, shooter2);
+        shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //shooter2.setInverted(true);
+        //shooter = new MotorGroup(shooter1, shooter2);
     }
 
-    public void update(double power) {
-        shooter.set(power);
+    public void update(double rpm) {
+        //shooter.set(power);
+        shooter1.setVelocity(rpm);
     }
 
     public int getVelocity() {

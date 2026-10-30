@@ -61,10 +61,24 @@ public class Robot {
     public static TransportState returnCase = TransportState.HOME;
 
 
+    public Robot(HardwareMap hardwareMap, boolean fieldCentric) {
+        voltageSensor =  hardwareMap.voltageSensor.iterator().next();
+        shooter = new Shooter(hardwareMap);
+        drive = new Drive(hardwareMap, fieldCentric);
+        intake = new Intake(hardwareMap);
+
+        allHubs = hardwareMap.getAll(LynxModule.class);
+        CtrlHub = allHubs.get(0);
+        ExpHub = allHubs.get(1);
+
+        for (LynxModule hub : allHubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
+    }
+
     public Robot(HardwareMap hardwareMap) {
         voltageSensor =  hardwareMap.voltageSensor.iterator().next();
         shooter = new Shooter(hardwareMap);
-        drive = new Drive(hardwareMap, true);
         intake = new Intake(hardwareMap);
 
         allHubs = hardwareMap.getAll(LynxModule.class);
@@ -120,30 +134,30 @@ public class Robot {
      */
 
     private void setTransportState(Gamepad gamepad1) {
-        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
-        if (transportState == TransportState.POWER_SHOOTER && gamepad1.right_trigger > triggerThreshold) {
-            if (shooter.inRange()) {
+        boolean aPressed  = gamepad1.aWasPressed();
+        boolean bPressed  = gamepad1.bWasPressed();
+        boolean bReleased = gamepad1.bWasReleased();
+        boolean shootHeld  = gamepad1.right_trigger > triggerThreshold;
+        boolean intakeHeld = gamepad1.left_trigger  > triggerThreshold;
+
+        if (aPressed) { transportState = TransportState.HOME; return; }
+
+        if (bPressed) { returnCase = transportState; transportState = TransportState.OUTTAKE; return; }
+        if (transportState == TransportState.OUTTAKE) {
+            if (bReleased) transportState = returnCase;
+            return;                                    // stay in OUTTAKE while b is held
+        }
+
+        if (shootHeld) {
+            if (transportState == TransportState.POWER_SHOOTER && shooter.inRange()) {
                 transportState = TransportState.SHOOT;
-            }
-        } else if (gamepad1.aWasPressed() && transportState != TransportState.HOME) {
-            transportState = TransportState.HOME;
-        } else if (gamepad1.right_trigger > triggerThreshold && transportState != TransportState.POWER_SHOOTER) {
-            transportState = TransportState.POWER_SHOOTER;
-        } else if (gamepad1.left_trigger > triggerThreshold && transportState != TransportState.INTAKE) {
+            } else if (transportState != TransportState.SHOOT) {
+                transportState = TransportState.POWER_SHOOTER;
+            }                                          // already SHOOT: keep firing
+        } else if (intakeHeld) {
             transportState = TransportState.INTAKE;
-        } else if (gamepad1.bWasPressed() && transportState != TransportState.OUTTAKE) {
-            returnCase = transportState;
-            transportState = TransportState.OUTTAKE;
-        } else if (gamepad1.bWasReleased() && transportState == TransportState.OUTTAKE) {
-            transportState = returnCase;
         } else {
             transportState = TransportState.HOME;
-        }
-        
-        if (transportState == TransportState.SHOOT || transportState == TransportState.POWER_SHOOTER) {
-            if (gamepad1.aWasPressed()) {
-                transportState = TransportState.HOME;
-            }
         }
     }
 }

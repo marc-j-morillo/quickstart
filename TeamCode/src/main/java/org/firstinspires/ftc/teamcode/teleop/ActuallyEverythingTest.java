@@ -5,7 +5,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDFController;
-import com.bylazar.configurables.annotations.Configurable;
+//import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
 
 @TeleOp(name = "ActuallyEverythingTest", group = "TeleOp")
-@Configurable
+//@Configurable
 public class ActuallyEverythingTest extends OpMode {
     //  ------------- BLOCKER -------------
 

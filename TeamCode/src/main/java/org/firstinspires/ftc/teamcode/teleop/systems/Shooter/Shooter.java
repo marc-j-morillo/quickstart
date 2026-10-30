@@ -22,13 +22,13 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 public class Shooter {
     public static final double dormant = 0;
 
-    // HOOD CLASS AND VARIABLES
+    // ---------- HOOD CLASS AND VARIABLES ----------
     HoodPollen hoodPollen;
 
     //SERVO STATES
     public static double hoodPollenPosition, hoodNectarPosition;
 
-    // TURRET CLASS AND VARIABLES
+    // ---------- TURRET CLASS AND VARIABLES ----------
     TurretPollen turretPollen;
     //TurretNectar turretNectar;
 
@@ -38,7 +38,7 @@ public class Shooter {
 
     public static final double turretHardwareLimit = 120;    // max travel from center, degrees
 
-    public static final double servoRangeDegrees = 240.0;
+    public static final double servoRangeDegrees = 240.0;    // turretHardWareLimit * 2, total range
 
     // Change these offsets to the actual turret position on the robot, for now they are set to 0
     // Offsets from odometry center to turret center, in inches
@@ -49,7 +49,7 @@ public class Shooter {
 
 
 
-    // FLYWHEEL CLASS AND VARIABLES
+    // ---------- FLYWHEEL CLASS AND VARIABLES ----------
     Flywheel flywheel;
 
     public static final double goalHeightInches = 65.6;
@@ -83,11 +83,13 @@ public class Shooter {
         //SHOOTER LUT
         //DISTANCE, VELOCITY
         velocityLut.add(0.0, 0.0);
+        velocityLut.add(1, 100);
         velocityLut.createLUT();
 
         //HOOD ANGLE LUT
         //DISTANCE, HOOD ANGLE
         hoodAngleLut.add(0.0, 0.0);
+        velocityLut.add(10, 0.1);
         hoodAngleLut.createLUT();
 
         turretPollen = new TurretPollen(hardwareMap);
@@ -109,20 +111,12 @@ public class Shooter {
 
         hoodPollenPosition = calcHoodAngle(true);
         hoodPollen.update(hoodPollenPosition);
-
-        if (shooterVelocityTarget == 0 || isDriving) {
-            shooterp = 0;
-            kV = 0;
-        } else {
-            shooterp = .025; // Change these values
-            kV = .000400186335403727; // Change these values
-        }
         
         shooterVelocity = flywheel.getVelocity();
         shooterController.setP(shooterp);
         shooterController.setF(kV * voltageMultiplier);
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
-        flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
+        flywheel.update(shooterVelocityTarget);
 
         switch (Robot.transportState) {
             case HOME:
@@ -150,21 +144,6 @@ public class Shooter {
 
     
     // -------------------------------- TURRET METHODS ---------------------------------
-    /*
-     * Commands the turret to a target angle (degrees, 0 = centered),
-     * clamped to the hardware limit and converted to a servo position.
-     */
-    private void setTurretAngle(double targetDegrees) {
-        double clamped = clampToLimit(angleWrap(targetDegrees));
-        turretCurrentPosition = clamped;
-        turretPollen.update(degreesToServoPosition(clamped));
-    }
-
-    private double clampToLimit(double degrees) {
-        if (degrees > turretHardwareLimit) return turretHardwareLimit;
-        if (degrees < -turretHardwareLimit) return -turretHardwareLimit;
-        return degrees;
-    }
 
     /*
      * Maps an angle in [-servoRangeDegrees/2, servoRangeDegrees/2] to a
@@ -182,19 +161,6 @@ public class Shooter {
     }
 
     private double turretTargetToGoal(boolean isPollen) {
-        double xOffset;
-        double yOffset;
-
-        // Calculate the offset of the turret from the robot's center 
-        // based on whether it's the pollen or nectar turret
-        if (isPollen) {
-            xOffset = turretPollenXOffset * Math.sin(botHeading);
-            yOffset = turretPollenYOffset * Math.cos(botHeading);
-        } else {
-            xOffset = turretNectarXOffset * Math.sin(botHeading);
-            yOffset = turretNectarYOffset * Math.cos(botHeading);
-        }
-
         double targetGoalX;
         double targetGoalY;
 
@@ -211,10 +177,10 @@ public class Shooter {
 
         double goalAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
 
-        double turretTarget = goalAngle - botHeading;
+        double turretTarget = goalAngle - Math.toDegrees(botHeading);
 
         turretTarget = angleWrap(turretTarget);
-        turretTarget = clampToLimit(turretTarget);
+        turretTarget = Range.clip(turretTarget, -turretHardwareLimit, turretHardwareLimit);
         turretTarget = degreesToServoPosition(turretTarget);
         return Range.clip(turretTarget, 0.01, 0.99);
     }
@@ -222,40 +188,10 @@ public class Shooter {
     // -------------------------------- HOOD METHODS ---------------------------------
 
     private double calcHoodAngle(boolean isPollen) {
-        double xOffset;
-        double yOffset;
-
-        // Calculate the offset of the turret from the robot's center 
-        // based on whether it's the pollen or nectar turret
-        if (isPollen) {
-            xOffset = turretPollenXOffset * Math.sin(botHeading);
-            yOffset = turretPollenYOffset * Math.cos(botHeading);
-        } else {
-            xOffset = turretNectarXOffset * Math.sin(botHeading);
-            yOffset = turretNectarYOffset * Math.cos(botHeading);
-        }
-
-        double targetGoalX;
-        double targetGoalY;
-
-        // Determine target goal coordinates
-        if (isRed) targetGoalX = 58.0;
-        else targetGoalX = 84.0;
-
-        if (botY < 51.0) targetGoalY = 61.0;
-        else if (botY > 93.0) targetGoalY = 83.0;
-        else targetGoalY = botY;
-
-        targetGoalX += xOffset;
-        targetGoalY += yOffset;
-
-        // Calculate Distance Vector
-        double deltaX = targetGoalX - botX;
-        double deltaY = targetGoalY - botY;
-        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
+        double distance = this.getDistance();
 
         // Lookup Hood Angle and return
-        return hoodAngleLut.get(distanceFromLimelightToTagInches);
+        return hoodAngleLut.get(distance);
     }
 
 
@@ -271,37 +207,15 @@ public class Shooter {
     }
 
     private double calcVelocity(boolean isDriving, boolean isShooting) {
-        double targetGoalX;
-        double targetGoalY;
-
-        // Determine target goal coordinates
-        if (isRed) {
-            targetGoalX = 58.0;
-        } else {
-            targetGoalX = 84.0;
-        }
-
-        if (botY < 56.0) {
-            targetGoalY = 61.0;
-        } else if (botY > 88.0) {
-            targetGoalY = 83.0;
-        } else {
-            targetGoalY = botY;
-        }
-
-        // Calculate Distance Vector
-        double deltaX = targetGoalX - botX;
-        double deltaY = targetGoalY - botY;
-        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
-        
+        double distance = this.getDistance();
 
         // Lookup Velocity & Round to Nearest 10 RPM
-        double rawVelocity = velocityLut.get(distanceFromLimelightToTagInches);
+        double rawVelocity = velocityLut.get(distance);
         double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
         
         // Change velocity depending if on we can shoot or if we are driving.
         double velocityMultiplier;
-        if (deltaY < 1) { // Will hit the walls of the goal, so can't shoot
+        if (botY <= 83 && botY >= 61) { // Will hit the walls of the goal, so can't shoot
             velocityMultiplier = 0.5;
         } else if (isDriving) {
             velocityMultiplier = 0.8;
@@ -317,5 +231,30 @@ public class Shooter {
         velocityTarget *= velocityMultiplier;
 
         return velocityTarget;
+    }
+
+    private double getDistance() {
+        double targetGoalX;
+        double targetGoalY;
+
+        // Determine target goal coordinates
+        if (isRed) {
+            targetGoalX = 58.0;
+        } else {
+            targetGoalX = 84.0;
+        }
+
+        if (botY < 61.0) {
+            targetGoalY = 61.0;
+        } else if (botY > 83.0) {
+            targetGoalY = 83.0;
+        } else {
+            targetGoalY = botY;
+        }
+
+        // Calculate Distance Vector
+        double deltaX = Math.abs(targetGoalX - botX);
+        double deltaY = Math.abs(targetGoalY - botY);
+        return Math.hypot(deltaX, deltaY);
     }
 }

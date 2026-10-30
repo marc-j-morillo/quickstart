@@ -25,10 +25,9 @@ import com.pedropathing.paths.interpolator.Interpolator;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
-import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 
-@Autonomous(name = "BlueSolo2Flower", group = "Autonomous")
-public class BlueSolo2Flower extends LinearOpMode {
+@Autonomous(name = "BlueSolo", group = "Autonomous")
+public class BlueSolo extends LinearOpMode {
     Robot robot;
     private Follower follower;
 

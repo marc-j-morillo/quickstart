@@ -5,22 +5,23 @@ repositories {
     maven { url = 'https://maven.brott.dev/' }
     maven { url = 'https://central.sonatype.com/repository/maven-snapshots' }
     maven { url = 'https://jitpack.io' }
+    maven { url = 'https://repo.dairy.foundation/releases' }
 }
 
 dependencies {
-    implementation 'org.firstinspires.ftc:Inspection:11.2.1'
-    implementation 'org.firstinspires.ftc:Blocks:11.2.1'
+    implementation 'org.firstinspires.ftc:Inspection:12.0.0'
+    implementation 'org.firstinspires.ftc:Blocks:12.0.0'
     //noinspection Aligned16KB
-    implementation 'org.firstinspires.ftc:RobotCore:11.2.1'
-    implementation 'org.firstinspires.ftc:RobotServer:11.2.1'
-    implementation 'org.firstinspires.ftc:OnBotJava:11.2.1'
-    implementation 'org.firstinspires.ftc:Hardware:11.2.1'
-    implementation 'org.firstinspires.ftc:FtcCommon:11.2.1'
-    implementation 'org.firstinspires.ftc:Vision:11.2.1'
+    implementation 'org.firstinspires.ftc:RobotCore:12.0.0'
+    implementation 'org.firstinspires.ftc:RobotServer:12.0.0'
+    implementation 'org.firstinspires.ftc:OnBotJava:12.0.0'
+    implementation 'org.firstinspires.ftc:Hardware:12.0.0'
+    implementation 'org.firstinspires.ftc:FtcCommon:12.0.0'
+    implementation 'org.firstinspires.ftc:Vision:12.0.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
-    implementation 'com.pedropathing:revhub:3.0.0'
-    implementation('com.pedropathing:tuning:1.0.0') {
+    implementation 'com.pedropathing:revhub:3.0.2'
+    implementation('com.pedropathing:tuning:1.0.2') {
         exclude group: 'dev.frozenmilk.sinister'
     }
     implementation 'com.pedropathing.ivy:pedro:1.1.1'
@@ -28,7 +29,6 @@ dependencies {
 
     implementation 'com.pedropathing:telemetry:1.0.0'
 
-    implementation "com.bylazar:fullpanels:1.0.12"
-
-    implementation 'com.acmerobotics.dashboard:dashboard:0.4.16'
+    implementation("com.bylazar.sloth:fullpanels:0.3.2+1.0.13")
+    implementation("com.acmerobotics.slothboard:dashboard:0.3.2+0.6.0")
 }

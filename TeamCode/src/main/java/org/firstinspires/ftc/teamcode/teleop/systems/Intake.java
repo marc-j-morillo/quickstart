@@ -84,7 +84,7 @@ public class Intake {
         flowerWedgeIsDown = false;
 
         // SET UP HARDWARE
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");
         //intake.setDirection(DcMotorSimple.Direction.REVERSE);
         
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

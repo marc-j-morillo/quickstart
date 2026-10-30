@@ -5,7 +5,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
-import com.bylazar.configurables.annotations.Configurable;
+//import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 
 @TeleOp(name = "DriveTest", group = "TeleOp")
-@Configurable
+//@Configurable
 public class DriveTest extends OpMode {
 
     //  ------------- Drive -------------
