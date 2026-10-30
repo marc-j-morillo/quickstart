@@ -13,17 +13,18 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
-
 import com.pedropathing.math.Pose;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.ManualDrive;
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
 
+@Configurable
 public class Drive {
 
 
     Follower follower;
-    Pose robotPose;
     /*
 //    public static double secondaryDriveP = .01, secondaryDriveI, secondaryDriveD = .001, secondaryDriveF;
     public static double driveP = 0, driveI = 0, driveD = 0, driveF = 0; // Change these values
@@ -33,9 +34,13 @@ public class Drive {
     */
     public boolean fieldCentric;
 
-    public static boolean isDriving = false;
+    @IgnoreConfigurable public static boolean isDriving = false;
 
-    public static final double stickThreshold = 0.05; // for isDriving calcs
+    public static double stickThreshold = 0.05; // for isDriving calcs
+
+    // Relocalization (share = corner pose, dpad down = heading only), field inches / degrees
+    public static double redCornerX = 113.520177165, blueCornerX = 31.479822835, cornerY = 136.4, cornerHeading = 90;
+    public static double redResetHeading = 0, blueResetHeading = 180;
 
 
     public Drive(HardwareMap hardwareMap, boolean fieldCentric) {
@@ -89,23 +94,20 @@ public class Drive {
         follower.update();
 
         // Update the FolowerPose.java variables
-        robotPose = follower.pose();
-        FollowerPose.update(robotPose);
+        FollowerPose.update(follower.pose());
     }
 
     public void update() {
         follower.update();
-        robotPose = follower.pose();
-
-        FollowerPose.update(robotPose);
+        FollowerPose.update(follower.pose());
     }
 
     public void resetLocalization() {
         Pose cornerPose;
         if (isRed) {
-            cornerPose = new Pose(113.520177165, 136.4, Math.toRadians(90));
+            cornerPose = new Pose(redCornerX, cornerY, Math.toRadians(cornerHeading));
         } else {
-            cornerPose = new Pose(31.479822835, 136.4, Math.toRadians(90));
+            cornerPose = new Pose(blueCornerX, cornerY, Math.toRadians(cornerHeading));
         }
         follower.setPose(cornerPose);
     }
@@ -113,9 +115,9 @@ public class Drive {
     public void resetIMU() {
         Pose newHeadingPose;
         if (isRed) {
-            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(0));
+            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(redResetHeading));
         } else {
-            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(180));
+            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(blueResetHeading));
         }
         follower.setPose(newHeadingPose);
     }

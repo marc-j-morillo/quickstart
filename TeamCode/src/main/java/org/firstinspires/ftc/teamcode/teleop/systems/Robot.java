@@ -25,12 +25,16 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 
 import com.pedropathing.math.Pose;
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
 import java.util.List;
 
+@Configurable
 public class Robot {
     Shooter shooter;
     Drive drive;
@@ -38,16 +42,20 @@ public class Robot {
 
     public VoltageSensor voltageSensor;
     public double voltage;
-    public static final double nominalVoltage = 14.0;
+    public static double nominalVoltage = 14.0;
     public double voltageMultiplier;
+    // The voltage sensor isn't in the bulk read (each read is its own ~1-2 ms command) and battery voltage
+    // changes slowly, so only read it this often
+    public static double voltageReadIntervalMs = 250;
+    private final ElapsedTime voltageTimer = new ElapsedTime();
 
-    public static final double triggerThreshold = 0.2;
+    public static double triggerThreshold = 0.2;
 
     public List<LynxModule> allHubs;
     public LynxModule CtrlHub;
     public LynxModule ExpHub;
 
-    public static boolean flowerWedgeIsActive = false; // Auto only
+    @IgnoreConfigurable public static boolean flowerWedgeIsActive = false; // Auto only
 
     //FSMs
     public static enum TransportState {
@@ -57,8 +65,8 @@ public class Robot {
         POWER_SHOOTER,
         SHOOT
     }
-    public static TransportState transportState = TransportState.HOME;
-    public static TransportState returnCase = TransportState.HOME;
+    @IgnoreConfigurable public static TransportState transportState = TransportState.HOME;
+    private boolean shotCancelled = false; // set by a, cleared when right trigger is released
 
 
     public Robot(HardwareMap hardwareMap, boolean fieldCentric) {
@@ -67,13 +75,12 @@ public class Robot {
         drive = new Drive(hardwareMap, fieldCentric);
         intake = new Intake(hardwareMap);
 
-        allHubs = hardwareMap.getAll(LynxModule.class);
+        // MANUAL bulk reads: one read per hub per loop, cleared at the start of each update()
+        allHubs = BulkReads.enableManual(hardwareMap);
         CtrlHub = allHubs.get(0);
         ExpHub = allHubs.get(1);
 
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
+        readVoltage();
     }
 
     public Robot(HardwareMap hardwareMap) {
@@ -81,23 +88,31 @@ public class Robot {
         shooter = new Shooter(hardwareMap);
         intake = new Intake(hardwareMap);
 
-        allHubs = hardwareMap.getAll(LynxModule.class);
+        // MANUAL bulk reads: one read per hub per loop, cleared at the start of each update()
+        allHubs = BulkReads.enableManual(hardwareMap);
         CtrlHub = allHubs.get(0);
         ExpHub = allHubs.get(1);
 
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
+        readVoltage();
+    }
+
+    private void readVoltage() {
+        voltage = voltageSensor.getVoltage();
+        voltageMultiplier = nominalVoltage / voltage;
+        voltageTimer.reset();
+    }
+
+    private void updateVoltage() {
+        if (voltageTimer.milliseconds() >= voltageReadIntervalMs) readVoltage();
     }
 
 
 
     // TELEOP UPDATE LOOP
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
+        BulkReads.clear(allHubs); // before any hardware read this loop
         setTransportState(gamepad1);
-
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
+        updateVoltage();
 
         drive.update(gamepad1);
         shooter.update(voltageMultiplier, Drive.isDriving);
@@ -106,14 +121,14 @@ public class Robot {
 
     // AUTO UPDATE LOOP
     public void update(Pose currentPose) {
+        BulkReads.clear(allHubs); // before any hardware read this loop
         if (transportState == TransportState.POWER_SHOOTER) {
             if (shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             }
         }
 
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
+        updateVoltage();
 
         FollowerPose.update(currentPose);
         shooter.update(voltageMultiplier, false);
@@ -123,39 +138,40 @@ public class Robot {
 
     }
 
-    /** Current inputs for the controller:
-     *      left trigger - intake (INTAKE)
-     * 
-     *      right trigger - "power up" shooter and shoot (POWER_SHOOTER and SHOOT)
+    /** Current inputs for the controller (all are hold-to-run, nothing held = HOME):
+     *      right trigger - "power up" shooter and shoot (POWER_SHOOTER, then SHOOT once in range)
      *          when powering/shooting, cannot drive
-     *          a - reset to nothing (if shooting), can shoot (HOME)
-     * 
-     *      b - outtake, then change back when released (OUTTAKE, store prev. in returnCase)
+     *          a - cancel the shot (HOME) until right trigger is released
+     *
+     *      left trigger - intake (INTAKE)
+     *
+     *      b - outtake (OUTTAKE)
      */
 
     private void setTransportState(Gamepad gamepad1) {
-        boolean aPressed  = gamepad1.aWasPressed();
-        boolean bPressed  = gamepad1.bWasPressed();
-        boolean bReleased = gamepad1.bWasReleased();
-        boolean shootHeld  = gamepad1.right_trigger > triggerThreshold;
-        boolean intakeHeld = gamepad1.left_trigger  > triggerThreshold;
+        // *WasPressed() clears itself when read, so read it exactly once per loop
+        boolean cancelPressed = gamepad1.aWasPressed();
+        boolean shootHeld = gamepad1.right_trigger > triggerThreshold;
+        boolean intakeHeld = gamepad1.left_trigger > triggerThreshold;
 
-        if (aPressed) { transportState = TransportState.HOME; return; }
-
-        if (bPressed) { returnCase = transportState; transportState = TransportState.OUTTAKE; return; }
-        if (transportState == TransportState.OUTTAKE) {
-            if (bReleased) transportState = returnCase;
-            return;                                    // stay in OUTTAKE while b is held
+        if (!shootHeld) {
+            shotCancelled = false;
+        } else if (cancelPressed) {
+            shotCancelled = true;
         }
 
-        if (shootHeld) {
+        if (shootHeld && !shotCancelled) {
+            // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity,
+            // then stay in SHOOT until the trigger is released
             if (transportState == TransportState.POWER_SHOOTER && shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             } else if (transportState != TransportState.SHOOT) {
                 transportState = TransportState.POWER_SHOOTER;
-            }                                          // already SHOOT: keep firing
+            }
         } else if (intakeHeld) {
             transportState = TransportState.INTAKE;
+        } else if (gamepad1.b) {
+            transportState = TransportState.OUTTAKE;
         } else {
             transportState = TransportState.HOME;
         }

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.teleop;
+package org.firstinspires.ftc.teamcode.teleop.hardwaretests;
 
 
 
@@ -57,14 +57,14 @@ public class FlowerWedgeTest extends OpMode {
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

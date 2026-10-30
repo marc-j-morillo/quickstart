@@ -61,14 +61,14 @@ public class IntakeTest extends OpMode {
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -115,7 +115,13 @@ public class IntakeTest extends OpMode {
 
         isAtTarget = flywheelActual >= flywheelTarget;
 
-        flywheel.update(flywheelTarget);
+        if (!isAtTarget) {
+            power = 1;
+        } else {
+            power = 0;
+        }
+
+        flywheel.update(power);
 
 
 

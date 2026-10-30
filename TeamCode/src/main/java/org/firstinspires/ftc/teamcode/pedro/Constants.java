@@ -18,23 +18,27 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Constants {
-    public static MecanumConfig drivetrainConfig = new MecanumConfig(c -> {
-        c.frontLeftName.set("frontLeft");
-        c.frontRightName.set("frontRight");
-        c.backLeftName.set("backLeft");
-        c.backRightName.set("backRight");
-        c.frontLeftDirection.set(DcMotorSimple.Direction.FORWARD);
-        c.frontRightDirection.set(DcMotorSimple.Direction.REVERSE);
-        c.backLeftDirection.set(DcMotorSimple.Direction.FORWARD);
-        c.backRightDirection.set(DcMotorSimple.Direction.REVERSE);
-    });
+    public static MecanumConfig drivetrainConfig = new MecanumConfig(
+            c -> {
+                c.frontLeftName.set("frontLeft");
+                c.backLeftName.set("backLeft");
+                c.frontRightName.set("frontRight");
+                c.backRightName.set("backRight");
+                c.frontLeftDirection.set(DcMotorSimple.Direction.FORWARD);
+                c.backLeftDirection.set(DcMotorSimple.Direction.FORWARD);
+                c.frontRightDirection.set(DcMotorSimple.Direction.REVERSE);
+                c.backRightDirection.set(DcMotorSimple.Direction.REVERSE);
+                c.manualBrakeMode.set(true);
+            }
+    );
     public static PinpointConfig localizerConfig = new PinpointConfig(
             c -> {
                 c.name.set("pinpoint");
-                c.xPodOffset.set(2.187); // CHANGE THIS VALUE
-                c.yPodOffset.set(-4.572); // CHANGE THIS VALUE
-                c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD); // CHANGE THIS VALUE
-                c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD); // CHANGE THIS VALUE
+                // Same Pinpoint settings as ActuallyEverythingManualTest (offsets in inches)
+                c.xPodOffset.set(2.362);
+                c.yPodOffset.set(-4.508);
+                c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
+                c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.REVERSED);
             }
     );
     public static ForesightConfig foresightConfig = new ForesightConfig( // CHANGE THESE VALUES

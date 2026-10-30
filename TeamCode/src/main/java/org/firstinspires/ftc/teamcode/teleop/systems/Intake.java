@@ -1,4 +1,3 @@
-
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
@@ -19,7 +18,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import com.arcrobotics.ftclib.util.InterpLUT;
+import com.bylazar.configurables.annotations.Configurable;
 
+@Configurable
 public class Intake {
     // -------------- Hardware --------------
 
@@ -32,11 +33,11 @@ public class Intake {
     // -------------- Limelight Stuff -------------- (commented out, we don't use a limelight)
 
     //public double limelightMountAngleDegrees = 10;
-    
+
     //public double limelightLensHeightInches = 16.930377953; // distance from the center of the Limelight lens to the floor
-    
+
     //public boolean lowLevel = false; // Color Sensor Values and Logic
-    
+
     // distance from the target to the floor
     //public double goalHeightInches = 65.6;
 
@@ -55,26 +56,35 @@ public class Intake {
 
     //MOTOR POWERS
     public static final double dormant = 0;
-    public static final double intaking = 0.9; // TEMPORARY VALUE
-    public static final double outtaking = intaking * -1;
-    public static final double semiTransferring = intaking * 0.2; // 0.18 power
+    public static double intaking = 0.9; // TEMPORARY VALUE
+    public static double outtaking = -0.9;
+    public static double semiTransferring = 0.18;
 
     //SERVO STATES
-    public static final double blockerOpen = 0.6;
-    public static final double blockerClosed = 0.85;
+    public static double blockerOpen = 0.6;
+    public static double blockerClosed = 0.85;
 
     //FLOWER WEDGE POSITIONS
-    public static final double flowerWedgeDown = 0; // TEMPORARY VALUE
-    public static final double flowerWedgeUp = .5; // TEMPORARY VALUE
+    public static double flowerWedgeDown = 0; // TEMPORARY VALUE
+    public static double flowerWedgeUp = .5; // TEMPORARY VALUE
+    public static double flowerWedgeDebounceSeconds = 0.5;
     public boolean flowerWedgeIsDown;
+
+    // Flower wedge is disabled for now. Set to true to bring it back (needs the
+    // flowerWedgeLeft / flowerWedgeRight servos in the robot config).
+    public static final boolean flowerWedgeEnabled = false;
     public ElapsedTime flowerWedgeWait;
 
+    //MOTOR DIRECTIONS (checked on the robot with the motors in the correct ports). Applied at init.
+    public static boolean intakeReversed = true;
+    public static boolean transferReversed = false;
 
 
-    
+
+
 
     public Intake(HardwareMap hardwareMap) {
-        
+
 
         matchTimer = new ElapsedTime();
         matchTimer.reset();
@@ -85,14 +95,14 @@ public class Intake {
 
         // SET UP HARDWARE
         intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        //intake.setDirection(DcMotorSimple.Direction.REVERSE);
-        
+        intake.setDirection(intakeReversed ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
+
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        
+
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        //transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        transferMotor.setDirection(transferReversed ? DcMotorSimple.Direction.REVERSE : DcMotorSimple.Direction.FORWARD);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -103,10 +113,12 @@ public class Intake {
         //transferNectar = hardwareMap.get(Servo.class, "transferNectar");
         //transferNectar.setDirection(Servo.Direction.FORWARD);
 
-        flowerWedgeLeft = hardwareMap.get(Servo.class, "flowerWedgeLeft");
-        //flowerWedgeLeft.setDirection(Servo.Direction.REVERSE);
-        flowerWedgeRight = hardwareMap.get(Servo.class, "flowerWedgeRight");
-        flowerWedgeRight.setDirection(Servo.Direction.REVERSE);
+        if (flowerWedgeEnabled) {
+            flowerWedgeLeft = hardwareMap.get(Servo.class, "flowerWedgeLeft");
+            //flowerWedgeLeft.setDirection(Servo.Direction.REVERSE);
+            flowerWedgeRight = hardwareMap.get(Servo.class, "flowerWedgeRight");
+            flowerWedgeRight.setDirection(Servo.Direction.REVERSE);
+        }
 
         //led = hardwareMap.get(ServoImplEx.class, "led");
 
@@ -114,15 +126,19 @@ public class Intake {
             intakePower = dormant;
             transferPollenBlocker.setPosition(blockerClosed);
             //transferNectar.setPosition(blockerClosed);
-            flowerWedgeLeft.setPosition(flowerWedgeUp);
-            flowerWedgeRight.setPosition(flowerWedgeUp);
+            if (flowerWedgeEnabled) {
+                flowerWedgeLeft.setPosition(flowerWedgeUp);
+                flowerWedgeRight.setPosition(flowerWedgeUp);
+            }
             //led.setPosition(0);
         } else {
             intakePower = dormant;
             transferPollenBlocker.setPosition(blockerClosed);
             //transferNectar.setPosition(blockerClosed);
-            flowerWedgeLeft.setPosition(flowerWedgeUp);
-            flowerWedgeRight.setPosition(flowerWedgeUp);
+            if (flowerWedgeEnabled) {
+                flowerWedgeLeft.setPosition(flowerWedgeUp);
+                flowerWedgeRight.setPosition(flowerWedgeUp);
+            }
             //led.setPosition(.6);
         }
     }
@@ -130,12 +146,10 @@ public class Intake {
 
     // -------------- AUTONOMOUS UPDATE METHOD --------------
     public void update(boolean flowerWedgeIsActive) {
-        intake.setPower(intakePower);
-        transferMotor.setPower(transferPower);
-        transferPollenBlocker.setPosition(blockerPosition);
-        //transferNectar.setPosition(blockerPosition);
-        flowerWedgeLeft.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
-        flowerWedgeRight.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
+        if (flowerWedgeEnabled) {
+            flowerWedgeLeft.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
+            flowerWedgeRight.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
+        }
 
 
         switch (Robot.transportState) {
@@ -165,6 +179,12 @@ public class Intake {
                 blockerPosition = blockerOpen;
                 break;
         }
+
+        // Write after the switch so this loop's state is applied this loop
+        intake.setPower(intakePower);
+        transferMotor.setPower(transferPower);
+        transferPollenBlocker.setPosition(blockerPosition);
+        //transferNectar.setPosition(blockerPosition);
     }
 
     // -------------- TELEOP UPDATE METHOD --------------
@@ -182,11 +202,12 @@ public class Intake {
         //     led.setPosition(.3);
         // }
 
-        intake.setPower(intakePower);
-        transferMotor.setPower(transferPower);
-        transferPollenBlocker.setPosition(blockerPosition);
-        flowerWedgeLeft.setPosition(setFlowerWedge(gamepad1));
-        flowerWedgeRight.setPosition(setFlowerWedge(gamepad1));
+        if (flowerWedgeEnabled) {
+            // call setFlowerWedge once: it consumes the bumper press, so a second call would miss it
+            double wedgePosition = setFlowerWedge(gamepad1);
+            flowerWedgeLeft.setPosition(wedgePosition);
+            flowerWedgeRight.setPosition(wedgePosition);
+        }
         //transferNectar.setPosition(blockerPosition);
 
 
@@ -217,12 +238,17 @@ public class Intake {
                 blockerPosition = blockerOpen;
                 break;
         }
+
+        // Write after the switch so this loop's state is applied this loop
+        intake.setPower(intakePower);
+        transferMotor.setPower(transferPower);
+        transferPollenBlocker.setPosition(blockerPosition);
     }
 
     public double setFlowerWedge(Gamepad gamepad1) {
         // Raise and lower the flower wedge with the left bumper,
-        // but only if 0.5 seconds have passed since the last press to prevent rapid toggling
-        if (gamepad1.leftBumperWasPressed() && flowerWedgeWait.seconds() > 0.5) {
+        // but only if flowerWedgeDebounceSeconds have passed since the last press to prevent rapid toggling
+        if (gamepad1.leftBumperWasPressed() && flowerWedgeWait.seconds() > flowerWedgeDebounceSeconds) {
             flowerWedgeWait.reset();
             if (flowerWedgeIsDown) {
                 flowerWedgeIsDown = false;

@@ -12,6 +12,7 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.s
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 import java.util.List;
 
@@ -19,7 +20,8 @@ import java.util.List;
 public class testCode extends OpMode {
     Robot robot;
     private ElapsedTime matchTimer = new ElapsedTime();
-    private double oldTime = 0;
+    private final LoopTimer loopTimer = new LoopTimer();
+    private boolean rumbling = false;
 
     @Override
     public void init() {
@@ -35,17 +37,16 @@ public class testCode extends OpMode {
 
     @Override
     public void loop() {
-        if (matchTimer.seconds() > 110 && matchTimer.seconds() < 120) {
-            gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);  // 200 mSec burst on left motor.
-        } else {
-            gamepad1.stopRumble();
-        }
+        loopTimer.update();
 
-        double newTime = getRuntime();
-        double loopTime = newTime-oldTime;
-        oldTime = newTime;
+        // Rumble during the last 10 s of teleop. Only send on a change: every rumble call is a message to the DS
+        boolean shouldRumble = matchTimer.seconds() > 110 && matchTimer.seconds() < 120;
+        if (shouldRumble && !rumbling) gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);
+        if (!shouldRumble && rumbling) gamepad1.stopRumble();
+        rumbling = shouldRumble;
 
         robot.update(gamepad1, gamepad2);
+        loopTimer.addTelemetry(telemetry);
         /*
 
         telemetry.addData("Transition Heading", transitionHeading);

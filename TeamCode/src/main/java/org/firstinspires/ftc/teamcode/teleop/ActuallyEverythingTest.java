@@ -19,6 +19,10 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
+import com.qualcomm.hardware.lynx.LynxModule;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
+import java.util.List;
 
 @TeleOp(name = "ActuallyEverythingTest", group = "TeleOp")
 //@Configurable
@@ -42,6 +46,10 @@ public class ActuallyEverythingTest extends OpMode {
     public static double intakeStallDraw = 5000;
     public boolean transferFull = false;
     public double loopCount = 0;
+    public double transferCurrent = 0; // mA, only read for the stall check (current isn't in the bulk read)
+
+    private List<LynxModule> hubs;
+    private final LoopTimer loopTimer = new LoopTimer();
 
 
     //MOTOR POWERS
@@ -77,7 +85,7 @@ public class ActuallyEverythingTest extends OpMode {
     // ------------- TURRET -------------
 
     TurretPollen turret;
-    public static double turretPosition;
+    public static double turretPosition = .5;
 
 
     // ------------- PIDF CONTROLLER -------------
@@ -95,13 +103,14 @@ public class ActuallyEverythingTest extends OpMode {
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        hubs = BulkReads.enableManual(hardwareMap); // one bulk read per hub per loop
 
         blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        //transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -131,6 +140,9 @@ public class ActuallyEverythingTest extends OpMode {
 
     @Override
     public void loop() {
+        BulkReads.clear(hubs); // before any hardware read this loop
+        loopTimer.update();
+
         loopCount++;
         loopCount %= 5;
         if (gamepad1.aWasPressed()) {
@@ -151,7 +163,8 @@ public class ActuallyEverythingTest extends OpMode {
             intakePower = intaking;
             if (!transferFull){
                 if (loopCount == 1) {
-                    if (transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > intakeStallDraw) {
+                    transferCurrent = transferMotor.getCurrent(CurrentUnit.MILLIAMPS);
+                    if (transferCurrent > intakeStallDraw) {
                         transferPower = 0;
                         transferFull = true;
                     } else {
@@ -208,8 +221,9 @@ public class ActuallyEverythingTest extends OpMode {
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
-        telemetry.addData("Transfer current: ", transferMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("Transfer current (last stall check, mA): ", transferCurrent);
 
+        loopTimer.addTelemetry(telemetry);
         telemetry.update();
     }
 }

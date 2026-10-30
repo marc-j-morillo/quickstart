@@ -1,16 +1,14 @@
-package org.firstinspires.ftc.teamcode.teleop;
+package org.firstinspires.ftc.teamcode.teleop.hardwaretests;
 
 
 
-import com.acmerobotics.dashboard.config.Config;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.Servo;
-
-@TeleOp(name = "TurretTest", group = "TeleOp")
 @Configurable
+@TeleOp(name = "TurretTest", group = "TeleOp")
 public class TurretTest extends OpMode {
 
     //  ------------- TURRET -------------
@@ -19,6 +17,7 @@ public class TurretTest extends OpMode {
     public static Servo turretPollenLeft, turretPollenRight;
 
     public static int rotLoopCount = 0;
+    public static double turretOffsets = 0;
 
 
 
@@ -56,14 +55,14 @@ public class TurretTest extends OpMode {
             turretPosition -= 0.01;
         }
 
-        if (turretPosition > 0.98) {
-            turretPosition = 0.98;
-        } else if (turretPosition < 0.02) {
-            turretPosition = 0.02;
+        if (turretPosition > 1) {
+            turretPosition = 1;
+        } else if (turretPosition < 0) {
+            turretPosition = 0;
         }
 
-        turretPollenLeft.setPosition(turretPosition + 0.02);
-        turretPollenRight.setPosition(turretPosition - 0.02);
+        turretPollenLeft.setPosition(turretPosition + turretOffsets);
+        turretPollenRight.setPosition(turretPosition - turretOffsets);
         telemetry.addData("Turret position: ", turretPosition);
 
         telemetry.update();
