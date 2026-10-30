@@ -50,11 +50,21 @@ public class Shooter {
     public static double turretNectarYOffset = 0.0;
 
     // -------------- Goal --------------
-    // The aim point is at goalX for your alliance, with y following the shooter's y, clamped to goalMinY..goalMaxY
-    public static double redGoalX = 58.0;
-    public static double blueGoalX = 84.0;
-    public static double goalMinY = 61.0;
-    public static double goalMaxY = 83.0;
+    // Red aims at the fixed point (redGoalX, redGoalY). Blue aims at the same point mirrored across the
+    // field's center line (x = fieldWidth / 2, same y), so only red needs tuning.
+    public static double redGoalX = 60.0;
+    public static double redGoalY = 65.0;
+    public static double fieldWidth = 141.5; // inches
+
+    /** Goal x for the current alliance. */
+    public static double allianceGoalX() {
+        return isRed ? redGoalX : fieldWidth - redGoalX;
+    }
+
+    /** Goal y for the current alliance (the mirror keeps y). */
+    public static double allianceGoalY() {
+        return redGoalY;
+    }
 
     // Optional aim-point override (used by the test opmodes). When enabled, turret aim, hood angle and
     // flywheel velocity all use this field point (inches, same frame as botX/botY) instead of the goal.
@@ -86,18 +96,51 @@ public class Shooter {
     public static double shootingTolerance = 150;
 
     // Velocity target changes
-    public static double velocityRounding = 10;            // round the LUT velocity to the nearest this many ticks/s
-    public static double drivingVelocityMultiplier = 0.8;  // idle slower while driving
-    public static double blockedVelocityMultiplier = 0.5;  // idle slower when the goal walls are in the way
-    public static double blockedDeltaY = 1;                // goal y - shooter y below this counts as blocked
+    public static double velocityRounding = 10;   // round the LUT velocity to the nearest this many ticks/s
+    // When not shooting (HOME / INTAKE / OUTTAKE) in teleop, the flywheel idles at this speed instead of the LUT speed.
+    // Autos always use the LUT speed so the flywheel is ready for each shot.
+    public static double idleRpm = 1100;
+    public static double flywheelTicksPerRev = 28; // flywheel motor encoder ticks per revolution (goBILDA bare motor)
 
     // -------------- Shot table --------------
     // Editable live from Panels: Shooter rebuilds the LUTs on its next update whenever these change.
     // Each index is one shot: at lutDistances[i] inches, spin to lutVelocities[i] and set the hood to lutHoods[i].
     // A distance <= 0 marks an empty slot. Find the points with LutTuner.
-    public static double[] lutDistances  = new double[12];
-    public static double[] lutVelocities = new double[12];
-    public static double[] lutHoods      = new double[12];
+    // Only slots that exist in ALL three arrays are used, so keep them the same length.
+    // The comments are just labels: if you change a distance, update the comments to match.
+    public static double[] lutDistances  = {
+            0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
+    };
+    public static double[] lutVelocities = {
+            1000, //  0 in (empty slot, ignored)
+            1000, // 20 in
+            1050, // 25 in
+            1075, // 30 in
+            1100, // 35 in
+            1125, // 40 in
+            1125, // 45 in
+            1150, // 50 in
+            1175, // 55 in
+            1250, // 60 in
+            1275, // 65 in
+            1300, // 70 in
+    };
+    public static double[] lutHoods      = {
+            0, //  0 in (empty slot, ignored)
+            0, // 20 in
+            0.1, // 25 in
+            0.15, // 30 in
+            0.2, // 35 in
+            0.22, // 40 in
+            0.24, // 45 in
+            0.28, // 50 in
+            0.36, // 55 in
+            0.4, // 60 in
+            0.41, // 65 in
+            0.42, // 70 in
+    };
+
+
 
     // Added on top of the LUT output (LutTuner adjusts these, then bakes them into a new point)
     public static double velocityTrim = 0;
@@ -137,7 +180,7 @@ public class Shooter {
         lutHood = hoodAngleLut.get(distanceFromLimelightToTagInches);
 
         turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY);
-        turretPollen.setAngle(turretTargetAnglePollen);
+        turretPollen.aimAt(turretTargetAnglePollen);
         turretTargetPositionPollen = turretPollen.getCommandedPosition();
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
@@ -148,23 +191,23 @@ public class Shooter {
         // Set this loop's target before running the controller, so it isn't a loop behind
         switch (Robot.transportState) {
             case HOME:
-                shooterVelocityTarget = calcVelocity(deltaY, isDriving, false);
+                shooterVelocityTarget = calcVelocity(false);
                 fireTolerance = notShootingTolerance;
                 break;
             case INTAKE:
-                shooterVelocityTarget = calcVelocity(deltaY, isDriving, false);
+                shooterVelocityTarget = calcVelocity(false);
                 fireTolerance = notShootingTolerance;
                 break;
             case OUTTAKE:
-                shooterVelocityTarget = calcVelocity(deltaY, isDriving, false);
+                shooterVelocityTarget = calcVelocity(false);
                 fireTolerance = notShootingTolerance;
                 break;
             case POWER_SHOOTER:
-                shooterVelocityTarget = calcVelocity(deltaY, isDriving, true);
+                shooterVelocityTarget = calcVelocity(true);
                 fireTolerance = poweringTolerance;
                 break;
             case SHOOT:
-                shooterVelocityTarget = calcVelocity(deltaY, isDriving, true);
+                shooterVelocityTarget = calcVelocity(true);
                 fireTolerance = shootingTolerance;
                 break;
         }
@@ -194,20 +237,25 @@ public class Shooter {
 
     private double goalX() {
         if (useTargetOverride) return targetOverrideX;
-        return isRed ? redGoalX : blueGoalX;
+        return allianceGoalX();
     }
 
     private double goalY() {
         if (useTargetOverride) return targetOverrideY;
-        return Range.clip(shooterY, goalMinY, goalMaxY);
+        return allianceGoalY();
     }
 
 
     // -------------------------------- TURRET METHODS ---------------------------------
 
-    private static double angleWrap(double degrees) {
-        while (degrees > 180)  degrees -= 360;
-        while (degrees < -180) degrees += 360;
+    // The wrap goes to (-180 + turretWrapBias, 180 + turretWrapBias], so a target straight behind the robot
+    // always resolves to the + side instead of flipping between +180 and -180 with localizer noise.
+    public static double turretWrapBias = 10;
+
+    /** Wraps a turret angle to one turn, biased by turretWrapBias. */
+    public static double angleWrap(double degrees) {
+        while (degrees > 180 + turretWrapBias)  degrees -= 360;
+        while (degrees <= -180 + turretWrapBias) degrees += 360;
         return degrees;
     }
 
@@ -229,31 +277,17 @@ public class Shooter {
         }
     }
 
-    private double calcVelocity(double deltaY, boolean isDriving, boolean isShooting) {
+    /** Flywheel target in ticks/s: the LUT speed when shooting (or in auto), otherwise idleRpm. */
+    private double calcVelocity(boolean isShooting) {
+        if (!isShooting && !inAuto) {
+            return idleRpm * flywheelTicksPerRev / 60.0;
+        }
+
         // Lookup Velocity & Round to Nearest velocityRounding
         double rawVelocity = lutVelocity + velocityTrim;
-        double velocityTarget = velocityRounding > 0
+        return velocityRounding > 0
                 ? Math.round(rawVelocity / velocityRounding) * velocityRounding
                 : rawVelocity;
-
-        // Change velocity depending if on we can shoot or if we are driving.
-        double velocityMultiplier;
-        if (deltaY < blockedDeltaY) { // Will hit the walls of the goal, so can't shoot
-            velocityMultiplier = blockedVelocityMultiplier;
-        } else if (isDriving) {
-            velocityMultiplier = drivingVelocityMultiplier;
-        } else {
-            velocityMultiplier = 1;
-        }
-        if (isShooting) {
-            velocityMultiplier = 1;
-        }
-        if (inAuto) {
-            velocityMultiplier = 1;
-        }
-        velocityTarget *= velocityMultiplier;
-
-        return velocityTarget;
     }
 
     // -------------------------------- SHOT TABLE ---------------------------------

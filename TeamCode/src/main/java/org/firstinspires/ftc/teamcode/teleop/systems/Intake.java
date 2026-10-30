@@ -75,9 +75,9 @@ public class Intake {
     public static final boolean flowerWedgeEnabled = false;
     public ElapsedTime flowerWedgeWait;
 
-    //MOTOR DIRECTIONS (matching IntakeTest, known working). Applied at init.
-    public static boolean intakeReversed = false;
-    public static boolean transferReversed = true;
+    //MOTOR DIRECTIONS (checked on the robot with the motors in the correct ports). Applied at init.
+    public static boolean intakeReversed = true;
+    public static boolean transferReversed = false;
 
 
 

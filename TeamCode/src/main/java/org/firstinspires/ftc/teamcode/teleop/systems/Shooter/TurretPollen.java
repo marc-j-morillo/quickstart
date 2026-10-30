@@ -17,22 +17,22 @@ import com.qualcomm.robotcore.util.Range;
 public class TurretPollen {
     // -------------- Calibration (tick -> angle) --------------
     public static double centerPosition = 0.5;      // servo position with the turret facing robot-forward (0 deg)
-    public static double degreesPerPosition = 240;  // turret degrees per 1.0 of servo position, negative if the turret turns the other way
+    public static double degreesPerPosition = -345; // turret degrees per 1.0 of servo position, negative = higher position turns the turret clockwise (right)
 
     // -------------- Travel limits ("start" and "end" of the turret) --------------
-    public static double minPosition = 0.02;
-    public static double maxPosition = 0.98;
+    public static double minPosition = 0;
+    public static double maxPosition = 1;
 
     // -------------- Per-servo trim, so the two servos don't fight each other --------------
-    public static double leftTrim = 0.02;
-    public static double rightTrim = -0.02;
+    public static double leftTrim = 0;
+    public static double rightTrim = 0;
 
     // -------------- Hardware --------------
     public static boolean leftReversed = false;
     public static boolean rightReversed = false;
     // FTC hubs default to 600-2400 us. Axon servos accept 500-2500 us, which unlocks their full programmed range.
-    public static double pwmLowerUs = 600;
-    public static double pwmUpperUs = 2400;
+    public static double pwmLowerUs = 500;
+    public static double pwmUpperUs = 2500;
 
     public ServoImplEx turretPollenLeft, turretPollenRight;
     private double commandedPosition = 0.5;
@@ -55,6 +55,29 @@ public class TurretPollen {
     /** Points the turret at a turret angle in degrees, clamped to the travel limits. */
     public void setAngle(double degrees) {
         update(angleToPosition(degrees));
+    }
+
+    /**
+     * Points the turret at a direction (any angle, +/- 360 doesn't matter), for auto-aim. Uses whichever
+     * equivalent angle is inside the travel limits. If none is (the target is in the dead zone past the limits),
+     * it holds the limit the turret is already closest to, so localizer noise can't flip it between both ends.
+     * The turret only swings across once the target is reachable again on the other side.
+     */
+    public void aimAt(double degrees) {
+        double lo = Math.min(positionToAngle(minPosition), positionToAngle(maxPosition));
+        double hi = Math.max(positionToAngle(minPosition), positionToAngle(maxPosition));
+        double current = getCommandedAngle();
+        double wrapped = ((degrees % 360) + 540) % 360 - 180; // -180..180
+
+        double best = Double.NaN;
+        for (int turns = -1; turns <= 1; turns++) {
+            double candidate = wrapped + 360 * turns;
+            if (candidate < lo || candidate > hi) continue;
+            if (Double.isNaN(best) || Math.abs(candidate - current) < Math.abs(best - current)) best = candidate;
+        }
+        if (Double.isNaN(best)) best = Math.abs(current - lo) < Math.abs(current - hi) ? lo : hi;
+
+        update(angleToPosition(best));
     }
 
     /** Sets the turret servo position, clamped to the travel limits. */

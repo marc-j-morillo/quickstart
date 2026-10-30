@@ -25,6 +25,7 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 
 import com.pedropathing.math.Pose;
@@ -43,6 +44,10 @@ public class Robot {
     public double voltage;
     public static double nominalVoltage = 14.0;
     public double voltageMultiplier;
+    // The voltage sensor isn't in the bulk read (each read is its own ~1-2 ms command) and battery voltage
+    // changes slowly, so only read it this often
+    public static double voltageReadIntervalMs = 250;
+    private final ElapsedTime voltageTimer = new ElapsedTime();
 
     public static double triggerThreshold = 0.2;
 
@@ -70,13 +75,22 @@ public class Robot {
         drive = new Drive(hardwareMap, true);
         intake = new Intake(hardwareMap);
 
-        allHubs = hardwareMap.getAll(LynxModule.class);
+        // MANUAL bulk reads: one read per hub per loop, cleared at the start of each update()
+        allHubs = BulkReads.enableManual(hardwareMap);
         CtrlHub = allHubs.get(0);
         ExpHub = allHubs.get(1);
 
-        for (LynxModule hub : allHubs) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
+        readVoltage();
+    }
+
+    private void readVoltage() {
+        voltage = voltageSensor.getVoltage();
+        voltageMultiplier = nominalVoltage / voltage;
+        voltageTimer.reset();
+    }
+
+    private void updateVoltage() {
+        if (voltageTimer.milliseconds() >= voltageReadIntervalMs) readVoltage();
     }
 
 
@@ -88,10 +102,9 @@ public class Robot {
 
     // TELEOP UPDATE LOOP
     public void update(Gamepad gamepad1, Gamepad gamepad2) {
+        BulkReads.clear(allHubs); // before any hardware read this loop
         setTransportState(gamepad1);
-
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
+        updateVoltage();
 
         drive.update(gamepad1);
         shooter.update(voltageMultiplier, Drive.isDriving);
@@ -100,14 +113,14 @@ public class Robot {
 
     // AUTO UPDATE LOOP
     public void update(Pose currentPose) {
+        BulkReads.clear(allHubs); // before any hardware read this loop
         if (transportState == TransportState.POWER_SHOOTER) {
             if (shooter.inRange()) {
                 transportState = TransportState.SHOOT;
             }
         }
 
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
+        updateVoltage();
 
         FollowerPose.update(currentPose);
         shooter.update(voltageMultiplier, false);

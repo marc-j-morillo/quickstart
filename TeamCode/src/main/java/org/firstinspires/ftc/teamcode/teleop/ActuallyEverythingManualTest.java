@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -26,6 +27,11 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import com.qualcomm.hardware.lynx.LynxModule;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
+import java.util.List;
 
 /**
  * MANUAL shooter test: you set the flywheel velocity (flywheelTarget) and hood position
@@ -35,17 +41,20 @@ import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
  * Test the finished tables with ActuallyEverythingLutTest.
  *
  * The turret aims from the localizer pose (turretAutoAim). Aim point:
- *   useCustomTarget = false -> exactly what Shooter's turret aims at: goal x for your alliance,
- *                              with y following the robot's y, clamped to 61..83
+ *   useCustomTarget = false -> exactly what Shooter's turret aims at: the red goal point
+ *                              (Shooter.redGoalX / redGoalY), mirrored across the field for blue
  *   useCustomTarget = true  -> the fixed field point (targetX, targetY), in inches
  *
+ * Alliance: isRedAlliance in Panels, or press x during init.
+ *
  * Controls (gamepad1):
- *   left stick / right stick .... drive / turn
+ *   left stick / right stick .... drive (field-centric, see fieldCentric) / turn
  *   right trigger ............... intake (with transfer stall detection)
  *   left trigger ................ outtake
- *   a ........................... toggle blocker
+ *   a (hold) .................... open the blocker, closed otherwise (gamepad rumbles while it's open)
  *   share ....................... reset pose to your alliance's corner
  *   dpad down ................... reset heading only (keeps x/y)
+ *   dpad up ..................... relocalize x/y to the shooting target (keeps heading): park the robot on the target first
  */
 @TeleOp(name = "ActuallyEverythingManualTest", group = "TeleOp")
 @Configurable
@@ -57,7 +66,8 @@ public class ActuallyEverythingManualTest extends OpMode {
     //SERVO STATES
     public static final double blockerOpen = 0.6;
     public static final double blockerClosed = 0.85;
-    public double blockerPosition = blockerOpen;
+    public double blockerPosition = blockerClosed;
+    private boolean rumbling = false;
 
     //  ------------- INTAKE -------------
 
@@ -69,12 +79,15 @@ public class ActuallyEverythingManualTest extends OpMode {
     public static double intakeStallDraw = 5000;
     public boolean transferFull = false;
     public double loopCount = 0;
+    public double transferCurrent = 0; // mA, only read for the stall check (current isn't in the bulk read)
 
-    // Motor directions, matching IntakeTest (known working): transfer reversed, intake forward.
-    // NOTE: the original ActuallyEverythingTest had these the other way around. If the intake
-    // or transfer spins backwards on your robot, flip the matching constant.
-    public static final boolean transferReversed = true;
-    public static final boolean intakeReversed = false;
+    private List<LynxModule> hubs;
+    private final LoopTimer loopTimer = new LoopTimer();
+
+    // Motor directions (checked on the robot with the motors in the correct ports): intake reversed, transfer forward.
+    // If the intake or transfer spins backwards on your robot, flip the matching constant.
+    public static final boolean transferReversed = false;
+    public static final boolean intakeReversed = true;
 
     //MOTOR POWERS
     public static double dormant = 0;
@@ -89,6 +102,12 @@ public class ActuallyEverythingManualTest extends OpMode {
 
     public boolean isDriving = false;
     public static final double stickThreshold = 0.05; // for isDriving calcs
+
+    // Field-centric: the left stick drives relative to the driver, not the robot.
+    // "Away from the driver" is this field heading (deg), same headings dpad down resets to.
+    public static boolean fieldCentric = true;
+    public static double redDriverHeading = 0;
+    public static double blueDriverHeading = 180;
 
 
     // ------------- PINPOINT LOCALIZER -------------
@@ -128,6 +147,11 @@ public class ActuallyEverythingManualTest extends OpMode {
 
 
 
+    // ------------- ALLIANCE -------------
+    // Change in Panels, or press x during init. Copied into GlobalVars.isRed every loop.
+    public static boolean isRedAlliance = true;
+
+
     // ------------- AIM TARGET -------------
     public static boolean useCustomTarget = false;
     // Default = center of the field (141.5 x 141.5 in field, so the middle is 70.75, 70.75).
@@ -138,7 +162,6 @@ public class ActuallyEverythingManualTest extends OpMode {
     private double aimX, aimY;
     private double distanceToTarget;
     private double turretAimDegrees;
-    private double turretAimServo;
 
 
     // ------------- PIDF CONTROLLER -------------
@@ -151,6 +174,8 @@ public class ActuallyEverythingManualTest extends OpMode {
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        hubs = BulkReads.enableManual(hardwareMap); // one bulk read per hub per loop
+        GlobalVars.isRed = isRedAlliance;
 
         // ----- Blocker -----
         blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
@@ -177,10 +202,10 @@ public class ActuallyEverythingManualTest extends OpMode {
         rightFront = hardwareMap.get(DcMotorEx.class, "frontRight");
         rightRear = hardwareMap.get(DcMotorEx.class, "backRight");
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightRear.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftRear.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightRear.setDirection(DcMotorSimple.Direction.REVERSE);
 
         for (DcMotorEx m : new DcMotorEx[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -209,7 +234,11 @@ public class ActuallyEverythingManualTest extends OpMode {
 
     @Override
     public void init_loop() {
+        if (gamepad1.xWasPressed()) isRedAlliance = !isRedAlliance;
+        GlobalVars.isRed = isRedAlliance;
+
         seedPinpointPose();
+        telemetry.addData("Alliance (x to switch)", isRedAlliance ? "RED" : "BLUE");
         telemetry.addData("Pinpoint pose seeded", pinpointSeeded);
         telemetry.update();
     }
@@ -219,6 +248,11 @@ public class ActuallyEverythingManualTest extends OpMode {
 
     @Override
     public void loop() {
+        BulkReads.clear(hubs); // before any hardware read this loop
+        loopTimer.update();
+
+        GlobalVars.isRed = isRedAlliance; // so a Panels change applies right away
+
         // ================= LOCALIZER =================
         seedPinpointPose(); // no-op once seeded
 
@@ -229,6 +263,12 @@ public class ActuallyEverythingManualTest extends OpMode {
         if (gamepad1.dpadDownWasPressed()) {
             setFieldPose(FollowerPose.botX, FollowerPose.botY, isRed ? 0 : 180);
         }
+        if (gamepad1.dpadUpWasPressed()) {
+            // Robot is sitting on the shooting target: snap x/y there, leave the Pinpoint heading alone
+            updateAimPoint();
+            pinpoint.setPosX(aimX, DistanceUnit.INCH);
+            pinpoint.setPosY(aimY, DistanceUnit.INCH);
+        }
 
         updateLocalizer();
 
@@ -238,14 +278,14 @@ public class ActuallyEverythingManualTest extends OpMode {
         // ================= BLOCKER =================
         loopCount++;
         loopCount %= 5;
-        if (gamepad1.aWasPressed()) {
-            if (blockerPosition == blockerOpen) {
-                blockerPosition = blockerClosed;
-            } else {
-                blockerPosition = blockerOpen;
-            }
-        }
+        blockerPosition = gamepad1.a ? blockerOpen : blockerClosed; // open only while a is held
         blocker.setPosition(blockerPosition);
+
+        // Rumble gamepad1 the whole time the blocker is open
+        boolean blockerIsOpen = blockerPosition == blockerOpen;
+        if (blockerIsOpen && !rumbling) gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);
+        if (!blockerIsOpen && rumbling) gamepad1.stopRumble();
+        rumbling = blockerIsOpen;
 
 
         // ================= INTAKE =================
@@ -257,7 +297,8 @@ public class ActuallyEverythingManualTest extends OpMode {
             intakePower = intaking;
             if (!transferFull){
                 if (loopCount == 1) {
-                    if (transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > intakeStallDraw) {
+                    transferCurrent = transferMotor.getCurrent(CurrentUnit.MILLIAMPS);
+                    if (transferCurrent > intakeStallDraw) {
                         transferPower = 0;
                         transferFull = true;
                     } else {
@@ -294,8 +335,8 @@ public class ActuallyEverythingManualTest extends OpMode {
 
         hood.update(Range.clip(hoodPosition, hoodMin, hoodMax));
 
-        double turretCommand = turretAutoAim ? turretAimServo : turretPosition;
-        turret.update(turretCommand); // clamped to TurretPollen's travel limits
+        if (turretAutoAim) turret.aimAt(turretAimDegrees); // picks a reachable angle, holds a limit in the dead zone
+        else turret.update(turretPosition);                 // clamped to TurretPollen's travel limits
 
 
         // ================= TELEMETRY =================
@@ -308,7 +349,7 @@ public class ActuallyEverythingManualTest extends OpMode {
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
-        telemetry.addData("Transfer current: ", transferMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("Transfer current (last stall check, mA): ", transferCurrent);
 
         telemetry.addLine("LOCALIZER:");
         telemetry.addData("Pinpoint pose seeded", pinpointSeeded);
@@ -317,6 +358,7 @@ public class ActuallyEverythingManualTest extends OpMode {
         telemetry.addData("y (in)", FollowerPose.botY);
         telemetry.addData("heading (deg)", FollowerPose.botHeading);
         telemetry.addData("isDriving", isDriving);
+        telemetry.addData("Field-centric", fieldCentric);
 
         telemetry.addLine("AIM:");
         telemetry.addData("Aiming at", useCustomTarget ? "custom target" : "goal");
@@ -329,6 +371,7 @@ public class ActuallyEverythingManualTest extends OpMode {
         telemetry.addData("Flywheel error", flywheelTarget - flywheelActual);
         telemetry.addData("Hood position (clamped)", Range.clip(hoodPosition, hoodMin, hoodMax));
 
+        loopTimer.addTelemetry(telemetry);
         telemetry.update();
     }
 
@@ -336,32 +379,29 @@ public class ActuallyEverythingManualTest extends OpMode {
     // Aiming
     // ------------------------------------------------------------------
 
-    /** Picks the aim point and computes distance + turret servo position from the localizer pose. */
+    /** Picks the aim point and computes distance + turret angle from the localizer pose. */
     private void updateAim() {
-        if (useCustomTarget) {
-            aimX = targetX;
-            aimY = targetY;
-        } else {
-            // Same point Shooter aims at
-            aimX = isRed ? Shooter.redGoalX : Shooter.blueGoalX;
-            aimY = Range.clip(FollowerPose.botY, Shooter.goalMinY, Shooter.goalMaxY);
-        }
+        updateAimPoint();
 
         double deltaX = aimX - FollowerPose.botX;
         double deltaY = aimY - FollowerPose.botY;
         distanceToTarget = Math.hypot(deltaX, deltaY);
 
-        // Same math as Shooter.turretTargetToGoal(): angle to target minus robot heading,
-        // wrapped, then mapped onto the servo with TurretPollen's calibration (it clamps to the travel limits).
+        // Same math as Shooter.turretTargetToGoal(): angle to target minus robot heading.
+        // TurretPollen.aimAt() then picks the reachable equivalent angle.
         double goalAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
-        turretAimDegrees = angleWrap(goalAngle - FollowerPose.botHeading);
-        turretAimServo = TurretPollen.angleToPosition(turretAimDegrees);
+        turretAimDegrees = Shooter.angleWrap(goalAngle - FollowerPose.botHeading);
     }
 
-    private static double angleWrap(double degrees) {
-        while (degrees > 180)  degrees -= 360;
-        while (degrees < -180) degrees += 360;
-        return degrees;
+    /** The shooting target: (targetX, targetY) if useCustomTarget, otherwise the same point Shooter aims at. */
+    private void updateAimPoint() {
+        if (useCustomTarget) {
+            aimX = targetX;
+            aimY = targetY;
+        } else {
+            aimX = Shooter.allianceGoalX();
+            aimY = Shooter.allianceGoalY();
+        }
     }
 
     // ------------------------------------------------------------------
@@ -404,11 +444,22 @@ public class ActuallyEverythingManualTest extends OpMode {
     // Drivetrain
     // ------------------------------------------------------------------
 
-    /** Standard robot-centric mecanum drive. */
+    /** Mecanum drive, field-centric or robot-centric (fieldCentric). */
     private void driveMecanum() {
         double y = -gamepad1.left_stick_y;       // forward
-        double x = gamepad1.left_stick_x * 1.1;  // strafe (1.1 counteracts imperfect strafing)
+        double x = gamepad1.left_stick_x;        // strafe
         double rx = gamepad1.right_stick_x;      // turn
+
+        if (fieldCentric) {
+            // Rotate the stick by the robot's heading relative to the driver
+            double driverHeading = isRed ? redDriverHeading : blueDriverHeading;
+            double relativeHeading = Math.toRadians(FollowerPose.botHeading - driverHeading);
+            double rotX = x * Math.cos(-relativeHeading) - y * Math.sin(-relativeHeading);
+            double rotY = x * Math.sin(-relativeHeading) + y * Math.cos(-relativeHeading);
+            x = rotX;
+            y = rotY;
+        }
+        x *= 1.1; // counteracts imperfect strafing
 
         isDriving = Math.abs(gamepad1.left_stick_x) > stickThreshold
                 || Math.abs(gamepad1.left_stick_y) > stickThreshold

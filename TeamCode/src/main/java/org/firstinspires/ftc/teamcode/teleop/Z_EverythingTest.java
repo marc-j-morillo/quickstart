@@ -21,6 +21,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
+import com.qualcomm.hardware.lynx.LynxModule;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
+import java.util.List;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name = "Z_EverythingTest", group = "TeleOp")
 @Configurable
@@ -46,6 +51,10 @@ public class Z_EverythingTest extends OpMode {
     public static double intakeStallDraw = 5000;
     public boolean transferFull = false;
     public double loopCount = 0;
+    public double transferCurrent = 0; // mA, only read for the stall check (current isn't in the bulk read)
+
+    private List<LynxModule> hubs;
+    private final LoopTimer loopTimer = new LoopTimer();
 
 
     //MOTOR POWERS
@@ -92,20 +101,21 @@ public class Z_EverythingTest extends OpMode {
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        hubs = BulkReads.enableManual(hardwareMap); // one bulk read per hub per loop
 
         blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
 
 
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
-        transferMotor.setDirection(DcMotorEx.Direction.REVERSE);
+        transferMotor.setDirection(DcMotorEx.Direction.FORWARD);
 
         transferMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         transferMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transferMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        intakeMotor.setDirection(DcMotorEx.Direction.FORWARD);
+        intakeMotor.setDirection(DcMotorEx.Direction.REVERSE);
 
         intakeMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -116,10 +126,10 @@ public class Z_EverythingTest extends OpMode {
         rightFront = hardwareMap.get(DcMotorEx.class, "frontRight");
         rightRear = hardwareMap.get(DcMotorEx.class, "backRight");
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightRear.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftRear.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightRear.setDirection(DcMotorSimple.Direction.REVERSE);
 
         for (DcMotorEx m : new DcMotorEx[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -134,6 +144,12 @@ public class Z_EverythingTest extends OpMode {
         turret = new TurretPollen(hardwareMap);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        // Same Pinpoint settings as ActuallyEverythingManualTest / Pedro Constants
+        pinpoint.setOffsets(2.362, -4.508, DistanceUnit.INCH);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.REVERSED);
         pinpoint.resetPosAndIMU();
     }
 
@@ -144,6 +160,9 @@ public class Z_EverythingTest extends OpMode {
 
     @Override
     public void loop() {
+        BulkReads.clear(hubs); // before any hardware read this loop
+        loopTimer.update();
+
         loopCount++;
         loopCount %= 5;
         if (gamepad1.aWasPressed()) {
@@ -164,7 +183,8 @@ public class Z_EverythingTest extends OpMode {
             intakePower = intaking;
              if (!transferFull){
                 if (loopCount == 1) {
-                    if (transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > intakeStallDraw) {
+                    transferCurrent = transferMotor.getCurrent(CurrentUnit.MILLIAMPS);
+                    if (transferCurrent > intakeStallDraw) {
                         transferPower = 0;
                         transferFull = true;
                     } else {
@@ -216,7 +236,7 @@ public class Z_EverythingTest extends OpMode {
         driveMecanum();
         pinpoint.update();
 
- 
+
 
 
 
@@ -224,8 +244,9 @@ public class Z_EverythingTest extends OpMode {
         telemetry.addData("Blocker position: ", blockerPosition);
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
-        telemetry.addData("Transfer current: ", transferMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("Transfer current (last stall check, mA): ", transferCurrent);
 
+        loopTimer.addTelemetry(telemetry);
         telemetry.update();
     }
 

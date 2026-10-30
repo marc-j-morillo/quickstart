@@ -26,6 +26,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 @Autonomous(name = "RedSolo2Flower", group = "Autonomous")
 public class RedSolo2Flower extends LinearOpMode {
@@ -135,10 +136,13 @@ public class RedSolo2Flower extends LinearOpMode {
         waitForStart();
         schedule(autoRoutine());
 
+        LoopTimer loopTimer = new LoopTimer();
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
             robot.update(follower.pose());
+            loopTimer.update();
+            loopTimer.addTelemetry(telemetry);
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());

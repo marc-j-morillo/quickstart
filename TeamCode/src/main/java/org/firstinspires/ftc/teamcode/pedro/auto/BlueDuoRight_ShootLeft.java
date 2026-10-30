@@ -27,6 +27,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 @Autonomous(name = "BlueDuoRight_ShootLeft", group = "Autonomous")
 public class BlueDuoRight_ShootLeft extends LinearOpMode{
@@ -124,10 +125,13 @@ public class BlueDuoRight_ShootLeft extends LinearOpMode{
         waitForStart();
         schedule(autoRoutine());
 
+        LoopTimer loopTimer = new LoopTimer();
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
             robot.update(follower.pose());
+            loopTimer.update();
+            loopTimer.addTelemetry(telemetry);
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());

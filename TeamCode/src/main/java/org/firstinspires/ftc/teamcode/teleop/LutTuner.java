@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +50,7 @@ public class LutTuner extends OpMode {
 
     private Robot robot;
     private String lastAction = "-";
+    private final LoopTimer loopTimer = new LoopTimer();
 
     @Override
     public void init() {
@@ -62,6 +64,7 @@ public class LutTuner extends OpMode {
 
     @Override
     public void loop() {
+        loopTimer.update();
         GlobalVars.isRed = isRedAlliance;
 
         // Edit before robot.update so this loop's shot uses the change
@@ -103,6 +106,7 @@ public class LutTuner extends OpMode {
         telemetry.addData("Ready to fire", Math.abs(Shooter.shooterVelocity - Shooter.shooterVelocityTarget) < Shooter.fireTolerance);
         telemetry.addData("Transport state", Robot.transportState);
         telemetry.addData("Last action", lastAction);
+        loopTimer.addTelemetry(telemetry);
         telemetry.addLine();
 
         telemetry.addLine("TABLE (distance: velocity, hood):");
@@ -193,25 +197,28 @@ public class LutTuner extends OpMode {
         return points;
     }
 
-    /** The table as Java array initializers, sorted by distance. */
+    /**
+     * The table as Java array initializers, sorted by distance, in the same layout as Shooter:
+     * distances on one line, then one velocity / hood per line with its distance as a comment.
+     */
     private List<String> tableLines() {
+        List<Integer> points = sortedPoints();
         StringBuilder distances = new StringBuilder();
-        StringBuilder velocities = new StringBuilder();
-        StringBuilder hoods = new StringBuilder();
-        for (int i : sortedPoints()) {
-            if (distances.length() > 0) {
-                distances.append(", ");
-                velocities.append(", ");
-                hoods.append(", ");
-            }
+        for (int i : points) {
+            if (distances.length() > 0) distances.append(", ");
             distances.append(String.format("%.1f", Shooter.lutDistances[i]));
-            velocities.append(String.format("%.0f", Shooter.lutVelocities[i]));
-            hoods.append(String.format("%.3f", Shooter.lutHoods[i]));
         }
+
         List<String> lines = new ArrayList<>();
-        lines.add("public static double[] lutDistances  = {" + distances + "};");
-        lines.add("public static double[] lutVelocities = {" + velocities + "};");
-        lines.add("public static double[] lutHoods      = {" + hoods + "};");
+        lines.add("public static double[] lutDistances  = {");
+        lines.add("        " + distances);
+        lines.add("};");
+        lines.add("public static double[] lutVelocities = {");
+        for (int i : points) lines.add(String.format("        %.0f, // %.1f in", Shooter.lutVelocities[i], Shooter.lutDistances[i]));
+        lines.add("};");
+        lines.add("public static double[] lutHoods      = {");
+        for (int i : points) lines.add(String.format("        %.3f, // %.1f in", Shooter.lutHoods[i], Shooter.lutDistances[i]));
+        lines.add("};");
         return lines;
     }
 }
