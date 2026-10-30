@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -12,14 +13,15 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name = "FlowerWedgeTest", group = "TeleOp")
+@Configurable
 public class FlowerWedgeTest extends OpMode {
     //  ------------- FLOWER WEDGE -------------
 
     public Servo flowerWedgeLeft, flowerWedgeRight;
 
 
-    public static final double flowerWedgeDown = 0; // TEMPORARY VALUE
-    public static final double flowerWedgeUp = .5; // TEMPORARY VALUE
+    public static double flowerWedgeDown = 0; // TEMPORARY VALUE
+    public static double flowerWedgeUp = .5; // TEMPORARY VALUE
     public boolean flowerWedgeIsDown;
     public ElapsedTime flowerWedgeWait;
 

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -10,6 +11,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 
 @TeleOp(name = "HoodTest", group = "TeleOp")
+@Configurable
 public class HoodTest extends OpMode {
 
     //  ------------- HOOD -------------

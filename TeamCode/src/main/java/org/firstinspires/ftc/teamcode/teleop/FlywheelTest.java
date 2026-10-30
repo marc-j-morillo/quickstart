@@ -4,7 +4,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
-//import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 
 @TeleOp(name = "FlywheelTest", group = "TeleOp")
-//@Configurable
+@Configurable
 public class FlywheelTest extends OpMode {
 
     //  ------------- Shooter -------------
@@ -59,12 +59,6 @@ public class FlywheelTest extends OpMode {
         double error = flywheelTarget - flywheelActual;
 
         isAtTarget = flywheelActual >= flywheelTarget;
-
-        if (!isAtTarget) {
-            power = 1;
-        } else {
-            power = 0;
-        }
 
         telemetry.addData("Velocity: ", flywheelActual);
         telemetry.addLine();

@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botX;
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botHeading;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
@@ -15,6 +12,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
+
 import com.pedropathing.math.Pose;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.ManualDrive;
@@ -91,18 +90,14 @@ public class Drive {
 
         // Update the FolowerPose.java variables
         robotPose = follower.pose();
-        botX = robotPose.x();
-        botY = robotPose.y();
-        botHeading = Math.toDegrees(robotPose.heading());
+        FollowerPose.update(robotPose);
     }
 
     public void update() {
         follower.update();
         robotPose = follower.pose();
 
-        botX = robotPose.x();
-        botY = robotPose.y();
-        botHeading = Math.toDegrees(robotPose.heading());
+        FollowerPose.update(robotPose);
     }
 
     public void resetLocalization() {
@@ -118,9 +113,9 @@ public class Drive {
     public void resetIMU() {
         Pose newHeadingPose;
         if (isRed) {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(0));
+            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(0));
         } else {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(180));
+            newHeadingPose = new Pose(follower.pose().x(), follower.pose().y(), Math.toRadians(180));
         }
         follower.setPose(newHeadingPose);
     }

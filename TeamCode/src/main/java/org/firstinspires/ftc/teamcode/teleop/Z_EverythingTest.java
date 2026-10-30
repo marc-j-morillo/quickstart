@@ -5,7 +5,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDFController;
-//import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -20,7 +20,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
 
 @TeleOp(name = "Z_EverythingTest", group = "TeleOp")
-//@Configurable
+@Configurable
 public class Z_EverythingTest extends OpMode {
     //  ------------- BLOCKER -------------
 
@@ -172,18 +172,7 @@ public class Z_EverythingTest extends OpMode {
         flywheelActual = flywheel.getVelocity();
 
         isAtTarget = flywheelActual >= flywheelTarget;
-
-        if (!isAtTarget) {
-            power = 1;
-        } else {
-            power = 0;
-        }
-
-        flywheelActual = flywheel.getVelocity();
-        shooterController.setP(shooterp);
-        shooterController.setF(kV);
-        shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * kS);
-        flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
+        flywheel.update(flywheelTarget);
 
 
         hood.update(hoodPosition);

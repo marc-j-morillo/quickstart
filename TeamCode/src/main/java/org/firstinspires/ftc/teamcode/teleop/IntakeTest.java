@@ -115,13 +115,7 @@ public class IntakeTest extends OpMode {
 
         isAtTarget = flywheelActual >= flywheelTarget;
 
-        if (!isAtTarget) {
-            power = 1;
-        } else {
-            power = 0;
-        }
-
-        flywheel.update(power);
+        flywheel.update(flywheelTarget);
 
 
 

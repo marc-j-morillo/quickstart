@@ -70,26 +70,37 @@ public class Shooter {
     public static final double notShootingTolerance = 50;
     public static final double poweringTolerance = 40;
     public static final double shootingTolerance = 150;
-
-
     public static final double emergencyEject = 0;
 
+    // --------------- LUT ---------------
+
+    //SHOOTER LUT
     public InterpLUT velocityLut = new InterpLUT();
+
+    private double getVelocity(double distance) {
+        return velocityLut.get(Range.clip(distance, LUT_MIN + 0.01, LUT_MAX - 0.01));
+    }
+
+    //HOOD ANGLE LUT
     public InterpLUT hoodAngleLut = new InterpLUT();
-    public static double distanceFromLimelightToTagInches;
+    private static final double LUT_MIN = 0, LUT_MAX = 250;
+    private double getHoodAngle(double distance) {
+        return hoodAngleLut.get(Range.clip(distance, LUT_MIN + 0.01, LUT_MAX - 0.01));
+    }
+
     public static double turretCurrentPosition;
 
     public Shooter(HardwareMap hardwareMap) {
         //SHOOTER LUT
-        //DISTANCE, VELOCITY
-        velocityLut.add(0.0, 0.0);
-        velocityLut.add(1, 100);
+        //DISTANCE, TICKS PER SECOND
+        velocityLut.add(LUT_MIN, 0.0);
+        velocityLut.add(LUT_MAX, 1500);
         velocityLut.createLUT();
 
         //HOOD ANGLE LUT
         //DISTANCE, HOOD ANGLE
-        hoodAngleLut.add(0.0, 0.0);
-        velocityLut.add(10, 0.1);
+        hoodAngleLut.add(LUT_MIN, 0.0);
+        hoodAngleLut.add(LUT_MAX, 0.7);
         hoodAngleLut.createLUT();
 
         turretPollen = new TurretPollen(hardwareMap);
@@ -104,20 +115,6 @@ public class Shooter {
     }
 
     public void update(double voltageMultiplier, boolean isDriving) {
-        turretTargetPositionPollen = turretTargetToGoal(true);
-        turretPollen.update(turretTargetPositionPollen);
-        //turretTargetPositionNectar = turretTargetToGoal(false);
-        //turretNectar.update(turretTargetPosition);
-
-        hoodPollenPosition = calcHoodAngle(true);
-        hoodPollen.update(hoodPollenPosition);
-        
-        shooterVelocity = flywheel.getVelocity();
-        shooterController.setP(shooterp);
-        shooterController.setF(kV * voltageMultiplier);
-        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
-        flywheel.update(shooterVelocityTarget);
-
         switch (Robot.transportState) {
             case HOME:
                 shooterVelocityTarget = calcVelocity(isDriving, false);
@@ -140,6 +137,15 @@ public class Shooter {
                 fireTolerance = shootingTolerance;
                 break;
         }
+        turretTargetPositionPollen = turretTargetToGoal(true);
+        turretPollen.update(turretTargetPositionPollen);
+        //turretTargetPositionNectar = turretTargetToGoal(false);
+        //turretNectar.update(turretTargetPosition);
+
+        hoodPollenPosition = calcHoodAngle(true);
+        hoodPollen.update(hoodPollenPosition);
+
+        flywheel.update(shooterVelocityTarget);
     }
 
     
@@ -191,7 +197,7 @@ public class Shooter {
         double distance = this.getDistance();
 
         // Lookup Hood Angle and return
-        return hoodAngleLut.get(distance);
+        return getHoodAngle(distance);
     }
 
 
@@ -210,7 +216,7 @@ public class Shooter {
         double distance = this.getDistance();
 
         // Lookup Velocity & Round to Nearest 10 RPM
-        double rawVelocity = velocityLut.get(distance);
+        double rawVelocity = getVelocity(distance);
         double velocityTarget = Math.round(rawVelocity / 10.0) * 10.0;
         
         // Change velocity depending if on we can shoot or if we are driving.

@@ -2,12 +2,15 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 
 
+import com.acmerobotics.dashboard.config.Config;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp(name = "TurretTest", group = "TeleOp")
+@Configurable
 public class TurretTest extends OpMode {
 
     //  ------------- TURRET -------------
