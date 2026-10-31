@@ -43,3 +43,16 @@ configurations.all {
         force 'androidx.appcompat:appcompat:1.8.0'
     }
 }
+
+// Sloth keeps the code from the last deploySloth on the robot and loads it over a normal install,
+// so OpModes added or renamed since then never show up on the Driver Station. Clear it whenever a
+// full install is built: Android Studio's Run (it passes android.injected.build.api only when
+// building for a device) or installDebug/installRelease. removeSlothRemote ignores adb failures,
+// so this is harmless when no robot is connected.
+def buildingForDevice = project.hasProperty('android.injected.build.api')
+tasks.configureEach { task ->
+    if (task.name in ['installDebug', 'installRelease']
+            || (buildingForDevice && task.name in ['assembleDebug', 'assembleRelease'])) {
+        task.dependsOn 'removeSlothRemote'
+    }
+}

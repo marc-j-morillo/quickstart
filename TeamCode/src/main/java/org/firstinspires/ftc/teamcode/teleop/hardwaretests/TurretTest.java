@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop.hardwaretests;
 
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.IgnoreConfigurable;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -14,7 +15,7 @@ public class TurretTest extends OpMode {
     //  ------------- TURRET -------------
     //TurretPollen turret;
     private double turretPosition;
-    public static Servo turretPollenLeft, turretPollenRight;
+    @IgnoreConfigurable public static Servo turretPollenLeft, turretPollenRight;
 
     public static int rotLoopCount = 0;
     public static double turretOffsets = 0;
