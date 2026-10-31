@@ -5,8 +5,8 @@ repositories {
     maven { url = 'https://maven.brott.dev/' }
     maven { url = 'https://central.sonatype.com/repository/maven-snapshots' }
     maven { url = 'https://jitpack.io' }
+    maven { url 'https://repo.dairy.foundation/releases/'}
 }
-
 dependencies {
     implementation 'org.firstinspires.ftc:Inspection:11.2.1'
     implementation 'org.firstinspires.ftc:Blocks:11.2.1'
@@ -20,7 +20,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     implementation 'com.pedropathing:revhub:3.0.0'
-    implementation('com.pedropathing:tuning:1.0.0') {
+    implementation('com.pedropathing:tuning:1.0.3') {
         exclude group: 'dev.frozenmilk.sinister'
     }
     implementation 'com.pedropathing.ivy:pedro:1.1.1'
