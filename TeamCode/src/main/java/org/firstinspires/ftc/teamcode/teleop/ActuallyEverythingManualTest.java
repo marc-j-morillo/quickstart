@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -26,6 +27,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
+import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -165,10 +167,14 @@ public class ActuallyEverythingManualTest extends OpMode {
 
 
     // ------------- PIDF CONTROLLER -------------
+    // Gains come from Shooter (shooterP / shooterI / shooterD / kV / kS), so tune them once under
+    // Shooter in Panels and both this test and the LUT test use them. Same voltage compensation as Shooter.
     public static PIDFController shooterController;
-
-    public static double shooterp = 0.007, shooteri = 0, shooterd = 0, kV = .000400186335403727, kS = .001;
     public static double shooterpid;
+
+    VoltageSensor voltageSensor;
+    private double voltage = 0;
+    private final ElapsedTime voltageTimer = new ElapsedTime();
 
 
     @Override
@@ -229,7 +235,8 @@ public class ActuallyEverythingManualTest extends OpMode {
 
         turret = new TurretPollen(hardwareMap);
 
-        shooterController = new PIDFController(shooterp, shooteri, shooterd, kV);
+        shooterController = new PIDFController(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.kV);
+        voltageSensor = hardwareMap.voltageSensor.iterator().next();
     }
 
     @Override
@@ -328,9 +335,16 @@ public class ActuallyEverythingManualTest extends OpMode {
         updateAim();
 
         // ================= SHOOTER (manual values) =================
+        // Voltage isn't in the bulk read, so only read it every Robot.voltageReadIntervalMs
+        if (voltage == 0 || voltageTimer.milliseconds() >= Robot.voltageReadIntervalMs) {
+            voltage = voltageSensor.getVoltage();
+            voltageTimer.reset();
+        }
+        double voltageMultiplier = Robot.nominalVoltage / voltage;
+
         flywheelActual = flywheel.getVelocity();
-        shooterController.setPIDF(shooterp, shooteri, shooterd, kV);
-        shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * kS);
+        shooterController.setPIDF(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.kV * voltageMultiplier);
+        shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * Shooter.kS * voltageMultiplier);
         flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
 
         hood.update(Range.clip(hoodPosition, hoodMin, hoodMax));

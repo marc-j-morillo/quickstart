@@ -81,7 +81,7 @@ public class Shooter {
     //Shooter PID (gains are zeroed while driving or when the target is 0)
     private PIDFController shooterController;
 
-    public static double shooterP = .025, shooterI = 0, shooterD = 0, kV = .000400186335403727, kS = .001;
+    public static double shooterP = .00135, shooterI = 0, shooterD = 0, kV = .00037, kS = .06;
     public double shooterpid;
 
     //MOTOR VELOCITY
@@ -112,32 +112,32 @@ public class Shooter {
             0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
     };
     public static double[] lutVelocities = {
-            1000, //  0 in (empty slot, ignored)
-            1000, // 20 in
-            1050, // 25 in
-            1075, // 30 in
-            1100, // 35 in
-            1125, // 40 in
-            1125, // 45 in
-            1150, // 50 in
-            1175, // 55 in
-            1250, // 60 in
-            1275, // 65 in
-            1300, // 70 in
+            935, //  0 in (empty slot, ignored)
+            935, // 20 in
+            935, // 25 in
+            935, // 30 in
+            955, // 35 in
+            965, // 40 in
+            980, // 45 in
+            1010, // 50 in
+            1015, // 55 in
+            1025, // 60 in
+            1100, // 65 in
+            1150, // 70 in
     };
     public static double[] lutHoods      = {
             0, //  0 in (empty slot, ignored)
             0, // 20 in
-            0.1, // 25 in
-            0.15, // 30 in
-            0.2, // 35 in
-            0.22, // 40 in
-            0.24, // 45 in
-            0.28, // 50 in
-            0.36, // 55 in
-            0.4, // 60 in
-            0.41, // 65 in
-            0.42, // 70 in
+            0.075, // 25 in
+            0.1, // 30 in
+            0.175, // 35 in
+            0.25, // 40 in
+            0.3, // 45 in
+            0.4, // 50 in
+            0.425, // 55 in
+            0.45, // 60 in
+            0.4, // 65 in
+            0.43, // 70 in
     };
 
 
