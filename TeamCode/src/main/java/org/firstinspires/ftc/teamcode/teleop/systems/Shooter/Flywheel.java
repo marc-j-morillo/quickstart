@@ -22,7 +22,12 @@ public class Flywheel {
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         shooter1.setVelocityPIDFCoefficients(P, I, D, F);
-        // if shooter2 is still on the robot, configure it too (see below)
+
+        shooter2 = hardwareMap.get(DcMotorEx.class, "shooter2");
+        shooter2.setDirection(DcMotorSimple.Direction.REVERSE);   // match FlywheelTest
+        shooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        shooter2.setVelocityPIDFCoefficients(P, I, D, F);
     }
 
     public void update(double ticksPerSecond) {
