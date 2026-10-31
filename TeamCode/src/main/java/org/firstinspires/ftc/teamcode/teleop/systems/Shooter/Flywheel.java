@@ -13,23 +13,23 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.util.InterpLUT;
 
 public class Flywheel {
-    public static MotorEx shooter1, shooter2;
-    public static MotorGroup shooter;
+    public static DcMotorEx shooter1, shooter2;
+    public static double P = 0, I = 0, D = 0, F = 0;   // copy your tuned values from FlywheelTest
 
     public Flywheel(HardwareMap hardwareMap) {
-        shooter1 = new MotorEx(hardwareMap, "shooter1", Motor.GoBILDA.BARE);
-        shooter2 = new MotorEx(hardwareMap, "shooter2", Motor.GoBILDA.BARE);
-
-        shooter1.setInverted(true);
-        shooter2.setInverted(true);
-        shooter = new MotorGroup(shooter1, shooter2);
+        shooter1 = hardwareMap.get(DcMotorEx.class, "shooter1");
+        shooter1.setDirection(DcMotorSimple.Direction.REVERSE);   // match FlywheelTest
+        shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        shooter1.setVelocityPIDFCoefficients(P, I, D, F);
+        // if shooter2 is still on the robot, configure it too (see below)
     }
 
-    public void update(double power) {
-        shooter.set(power);
+    public void update(double ticksPerSecond) {
+        shooter1.setVelocity(ticksPerSecond);
+        // if shooter2 is geared to shooter1 with no encoder of its own:
+        shooter2.setPower(shooter1.getPower());
     }
 
-    public int getVelocity() {
-        return (int)(shooter1.getVelocity());
-    }
+    public double getVelocity() { return shooter1.getVelocity(); }
 }
