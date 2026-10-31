@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.pedro.procedures.PinpointTuner;
 import org.firstinspires.ftc.teamcode.pedro.procedures.Tests;
 
 public class Tuning {
+    // http://192.168.43.1:10158/
     @Tuner
     public static Procedure mecanumTuner() {
         return new MecanumTuner();
