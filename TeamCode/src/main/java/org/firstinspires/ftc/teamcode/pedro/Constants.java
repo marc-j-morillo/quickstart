@@ -1,4 +1,4 @@
-// Tuner: http://192.168.43.1:10158/
+// Tuner: http://192.168.43.1:10158/ (websocket on port 12649). Panels: http://192.168.43.1:8001/
 // Docs: https://pedropathing.com/docs/pathing/tuning
 
 
@@ -63,9 +63,9 @@ public class Constants {
     );
     public static Follower create(HardwareMap h) {
         return new Follower(
-            new PinpointLocalizer(h, localizerConfig),
-            new Mecanum(h, drivetrainConfig),
-            new Foresight(foresightConfig)
+                new PinpointLocalizer(h, localizerConfig),
+                new Mecanum(h, drivetrainConfig),
+                new Foresight(foresightConfig)
         );
     }
 }

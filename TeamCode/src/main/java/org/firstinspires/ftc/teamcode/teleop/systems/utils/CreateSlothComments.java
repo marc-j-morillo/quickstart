@@ -53,7 +53,7 @@ adb shell rm -rf /storage/emulated/0/FIRST/dairy/sloth/*
 
 Then do a full install again.
 
-Sloth’s dashboard runs at http://192.168.43.1:8001 and Panels at its usual address. Both update @Configurable and @Config values live, which is how you’ll tune the flywheel P and F without redeploying.
+Panels runs at http://192.168.43.1:8001, FTC Dashboard (Slothboard) at http://192.168.43.1:8080/dash, and the Pedro tuner at http://192.168.43.1:10158 (it also needs port 12649 for its websocket). Panels and Dashboard both update @Configurable and @Config values live, which is how you’ll tune the flywheel P and F without redeploying.
 
 Source: Sloth README
      */
