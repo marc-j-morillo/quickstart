@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botX;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
@@ -14,6 +13,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.controller.PIDFController;
 
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 
 
 import com.qualcomm.robotcore.util.Range;
@@ -50,21 +50,23 @@ public class Shooter {
     public static double turretNectarYOffset = 0.0;
 
     // -------------- Goal --------------
-    // Red aims at the fixed point (redGoalX, redGoalY). Blue aims at the same point mirrored across the
-    // field's center line (x = fieldWidth / 2, same y), so only red needs tuning.
-    public static double redGoalX = 60.0;
-    public static double redGoalY = 65.0;
-    public static double fieldWidth = 141.5; // inches
+    // The goal points (RIGHT / LEFT, red tuned, blue mirrored) live in GoalTargets.
 
-    /** Goal x for the current alliance. */
+    /** Goal x for the current alliance and side. */
     public static double allianceGoalX() {
-        return isRed ? redGoalX : fieldWidth - redGoalX;
+        return GoalTargets.goalX();
     }
 
-    /** Goal y for the current alliance (the mirror keeps y). */
+    /** Goal y for the current alliance and side. */
     public static double allianceGoalY() {
-        return redGoalY;
+        return GoalTargets.goalY();
     }
+
+    // -------------- Driver adjustments --------------
+    // Changed with gamepad2 in the competition teleops. Reset to 0 whenever a Shooter is created,
+    // so one opmode's adjustments never leak into the next (e.g. teleop into the next auto).
+    @IgnoreConfigurable public static double turretAngleOffset = 0; // degrees, + = counterclockwise (left)
+    @IgnoreConfigurable public static double velocityOffsetRpm = 0; // rpm, added to the shooting speed
 
     // Optional aim-point override (used by the test opmodes). When enabled, turret aim, hood angle and
     // flywheel velocity all use this field point (inches, same frame as botX/botY) instead of the goal.
@@ -112,32 +114,32 @@ public class Shooter {
             0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
     };
     public static double[] lutVelocities = {
-            935, //  0 in (empty slot, ignored)
-            935, // 20 in
-            935, // 25 in
-            935, // 30 in
-            955, // 35 in
-            965, // 40 in
-            980, // 45 in
-            1010, // 50 in
-            1015, // 55 in
-            1025, // 60 in
-            1100, // 65 in
-            1150, // 70 in
+            920, //  0 in (empty slot, ignored)
+            920, // 20 in
+            920, // 25 in
+            920, // 30 in
+            930, // 35 in
+            940, // 40 in
+            960, // 45 in
+            978, // 50 in
+            990, // 55 in
+            1000, // 60 in
+            1020, // 65 in
+            1075 // 70 in
     };
     public static double[] lutHoods      = {
             0, //  0 in (empty slot, ignored)
             0, // 20 in
-            0.075, // 25 in
-            0.1, // 30 in
-            0.175, // 35 in
-            0.25, // 40 in
-            0.3, // 45 in
-            0.4, // 50 in
-            0.425, // 55 in
-            0.45, // 60 in
-            0.4, // 65 in
-            0.43, // 70 in
+            0.05, // 25 in
+            0.75, // 30 in
+            0.12, // 35 in
+            0.14, // 40 in
+            0.18, // 45 in
+            0.25, // 50 in
+            0.275, // 55 in
+            0.3, // 60 in
+            0.325, // 65 in
+            0.35, // 70 in
     };
 
 
@@ -167,6 +169,10 @@ public class Shooter {
         shooterVelocity = dormant;
         shooterVelocityTarget = dormant;
         hoodPollenPosition = 0;
+
+        turretAngleOffset = 0;
+        velocityOffsetRpm = 0;
+        GoalTargets.leftSide = false;
     }
 
     public void update(double voltageMultiplier, boolean isDriving) {
@@ -174,12 +180,12 @@ public class Shooter {
         updateShooterPosition(true);
 
         double deltaX = goalX() - shooterX;
-        double deltaY = goalY() - shooterY;
+        double deltaY = shootingZoneDeltaY(goalY() - shooterY); // outside the shooting zone, act as if on its edge
         distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
         lutVelocity = velocityLut.get(distanceFromLimelightToTagInches);
         lutHood = hoodAngleLut.get(distanceFromLimelightToTagInches);
 
-        turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY);
+        turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY) + turretAngleOffset;
         turretPollen.aimAt(turretTargetAnglePollen);
         turretTargetPositionPollen = turretPollen.getCommandedPosition();
         //turretTargetPositionNectar = turretTargetToGoal(false);
@@ -259,10 +265,31 @@ public class Shooter {
         return degrees;
     }
 
+    /**
+     * Goal y minus turret y, limited to the shooting zone (see GoalTargets.shootingZoneMargin). Outside the zone
+     * it acts as if the turret were on the zone's edge, same x and heading. Used for the turret aim and the LUT
+     * distance. Not applied to the test opmodes' target override.
+     */
+    private double shootingZoneDeltaY(double deltaY) {
+        if (useTargetOverride) return deltaY;
+        double margin = GoalTargets.shootingZoneMargin;
+        return GoalTargets.shootsFromBelow() ? Math.max(deltaY, margin) : Math.min(deltaY, -margin);
+    }
+
     /** Turret angle (degrees, 0 = robot-forward) that points at the goal. TurretPollen clamps it to its limits. */
     private double turretTargetToGoal(double deltaX, double deltaY) {
         double goalAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
         return angleWrap(goalAngle - botHeading);
+    }
+
+
+    /** Turns the turret servo output off or on. The Shooter keeps aiming either way. */
+    public void setTurretOutputEnabled(boolean enabled) {
+        turretPollen.setOutputEnabled(enabled);
+    }
+
+    public boolean isTurretOutputEnabled() {
+        return turretPollen.isOutputEnabled();
     }
 
 
@@ -280,14 +307,20 @@ public class Shooter {
     /** Flywheel target in ticks/s: the LUT speed when shooting (or in auto), otherwise idleRpm. */
     private double calcVelocity(boolean isShooting) {
         if (!isShooting && !inAuto) {
-            return idleRpm * flywheelTicksPerRev / 60.0;
+            return rpmToTicksPerSecond(idleRpm);
         }
 
         // Lookup Velocity & Round to Nearest velocityRounding
         double rawVelocity = lutVelocity + velocityTrim;
-        return velocityRounding > 0
+        double rounded = velocityRounding > 0
                 ? Math.round(rawVelocity / velocityRounding) * velocityRounding
                 : rawVelocity;
+        // The driver offset goes on after rounding, so every 15 rpm step actually changes the target
+        return rounded + rpmToTicksPerSecond(velocityOffsetRpm);
+    }
+
+    public static double rpmToTicksPerSecond(double rpm) {
+        return rpm * flywheelTicksPerRev / 60.0;
     }
 
     // -------------------------------- SHOT TABLE ---------------------------------

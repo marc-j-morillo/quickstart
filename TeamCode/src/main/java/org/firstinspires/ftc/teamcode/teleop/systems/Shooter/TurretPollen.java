@@ -17,7 +17,10 @@ import com.qualcomm.robotcore.util.Range;
 public class TurretPollen {
     // -------------- Calibration (tick -> angle) --------------
     public static double centerPosition = 0.5;      // servo position with the turret facing robot-forward (0 deg)
-    public static double degreesPerPosition = -345; // turret degrees per 1.0 of servo position, negative = higher position turns the turret clockwise (right)
+    // Turret degrees per 1.0 of servo position, negative = higher position turns the turret clockwise (right).
+    // Measured at the PWM range below. If you change the PWM range, scale this by (new span / old span),
+    // or re-measure with TurretServoTuner.
+    public static double degreesPerPosition = -345;
 
     // -------------- Travel limits ("start" and "end" of the turret) --------------
     public static double minPosition = 0;
@@ -31,11 +34,23 @@ public class TurretPollen {
     public static boolean leftReversed = false;
     public static boolean rightReversed = false;
     // FTC hubs default to 600-2400 us. Axon servos accept 500-2500 us, which unlocks their full programmed range.
+    // In servo mode the pulse width is the POSITION command, not power: narrowing it shrinks the travel.
     public static double pwmLowerUs = 500;
     public static double pwmUpperUs = 2500;
 
+    // -------------- Power reduction (no Axon programmer needed) --------------
+    // A servo in position mode pushes harder the further it is from its command. Moving the command toward the
+    // target at most this fast keeps that gap, and so the power, small. Lower = gentler but slower to track.
+    // 0 = no limit (jumps straight to the target).
+    public static double maxTurretDegPerSec = 300;
+    // false = drive only the left servo and leave the right one unpowered (PWM off): half the torque, and the
+    // two servos can't fight each other. Takes effect on the next applyHardwareConfig (opmode init).
+    public static boolean rightServoEnabled = true;
+
     public ServoImplEx turretPollenLeft, turretPollenRight;
     private double commandedPosition = 0.5;
+    private long lastUpdateNanos = 0;
+    private boolean outputEnabled = true;
 
     public TurretPollen(HardwareMap hardwareMap) {
         turretPollenLeft = hardwareMap.get(ServoImplEx.class, "turretPollenLeft");
@@ -50,6 +65,8 @@ public class TurretPollen {
         PwmControl.PwmRange range = new PwmControl.PwmRange(pwmLowerUs, pwmUpperUs);
         turretPollenLeft.setPwmRange(range);
         turretPollenRight.setPwmRange(range);
+        if (rightServoEnabled) turretPollenRight.setPwmEnable();
+        else turretPollenRight.setPwmDisable();
     }
 
     /** Points the turret at a turret angle in degrees, clamped to the travel limits. */
@@ -80,16 +97,57 @@ public class TurretPollen {
         update(angleToPosition(best));
     }
 
-    /** Sets the turret servo position, clamped to the travel limits. */
+    /**
+     * Moves the turret toward a servo position, clamped to the travel limits. The command moves at most
+     * maxTurretDegPerSec, so call this every loop until it gets there.
+     */
     public void update(double turretTargetPosition) {
-        setRawPosition(Range.clip(turretTargetPosition, Math.min(minPosition, maxPosition), Math.max(minPosition, maxPosition)));
+        double target = Range.clip(turretTargetPosition, Math.min(minPosition, maxPosition), Math.max(minPosition, maxPosition));
+
+        long now = System.nanoTime();
+        if (maxTurretDegPerSec > 0 && degreesPerPosition != 0) {
+            // First call starts from the current command; dt is capped so a long pause can't cause a jump
+            double dt = lastUpdateNanos == 0 ? 0 : Math.min((now - lastUpdateNanos) / 1e9, 0.1);
+            double maxStep = maxTurretDegPerSec / Math.abs(degreesPerPosition) * dt;
+            target = commandedPosition + Range.clip(target - commandedPosition, -maxStep, maxStep);
+        }
+        lastUpdateNanos = now;
+
+        setRawPosition(target);
     }
 
-    /** Sets the servo position ignoring the travel limits (only clipped to 0..1). For finding the limits. */
+    /** Sets the servo position right away, ignoring the travel limits and speed limit (only clipped to 0..1). For tuning. */
     public void setRawPosition(double position) {
         commandedPosition = Range.clip(position, 0, 1);
+        if (outputEnabled) sendCommandedPosition();
+    }
+
+    private void sendCommandedPosition() {
         turretPollenLeft.setPosition(Range.clip(commandedPosition + leftTrim, 0, 1));
-        turretPollenRight.setPosition(Range.clip(commandedPosition + rightTrim, 0, 1));
+        // Setting a position turns the PWM back on, so skip the right servo while it's meant to be off
+        if (rightServoEnabled) turretPollenRight.setPosition(Range.clip(commandedPosition + rightTrim, 0, 1));
+    }
+
+    /**
+     * Turns the servo signals off (the turret goes limp) or back on. Only the hardware output changes:
+     * aiming, the speed limit and the commanded position keep updating, and turning it back on sends the
+     * current command.
+     */
+    public void setOutputEnabled(boolean enabled) {
+        if (enabled == outputEnabled) return;
+        outputEnabled = enabled;
+        if (enabled) {
+            turretPollenLeft.setPwmEnable();
+            if (rightServoEnabled) turretPollenRight.setPwmEnable();
+            sendCommandedPosition();
+        } else {
+            turretPollenLeft.setPwmDisable();
+            turretPollenRight.setPwmDisable();
+        }
+    }
+
+    public boolean isOutputEnabled() {
+        return outputEnabled;
     }
 
     public double getCommandedPosition() {

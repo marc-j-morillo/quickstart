@@ -51,7 +51,8 @@ import java.util.List;
  *   a (hold) .................... open the blocker, closed otherwise (gamepad rumbles while it's open)
  *   right bumper (hold) ......... POWER_SHOOTER: flywheel to full LUT speed for the current distance
  *   share ....................... reset pose to your alliance's corner
- *   dpad down ................... reset heading only (keeps x/y)
+ *   dpad left ................... reset heading only (keeps x/y)
+ *   dpad down ................... toggle the turret servos on / off (off = limp, aiming keeps running)
  *   dpad up ..................... relocalize x/y to the shooting target (keeps heading): park the robot on the target first
  *
  * Notes:
@@ -233,8 +234,12 @@ public class ActuallyEverythingLutTest extends OpMode {
             if (isRed) setFieldPose(113.520177165, 136.4, 90);
             else setFieldPose(31.479822835, 136.4, 90);
         }
-        if (gamepad1.dpadDownWasPressed()) {
+        if (gamepad1.dpadLeftWasPressed()) {
             setFieldPose(FollowerPose.botX, FollowerPose.botY, isRed ? 0 : 180);
+        }
+        if (gamepad1.dpadDownWasPressed()) {
+            // Only the turret servo signal turns off: the Shooter keeps aiming, so it's back on target when re-enabled
+            shooter.setTurretOutputEnabled(!shooter.isTurretOutputEnabled());
         }
         if (gamepad1.dpadUpWasPressed()) {
             // Robot is sitting on the shooting target: snap x/y there, leave the Pinpoint heading alone
@@ -342,6 +347,7 @@ public class ActuallyEverythingLutTest extends OpMode {
         telemetry.addLine("SHOOTER (LUT):");
         telemetry.addData("Transport state", Robot.transportState);
         telemetry.addData("Aiming at", useCustomTarget ? "custom target" : "goal");
+        telemetry.addData("Turret output (dpad down)", shooter.isTurretOutputEnabled() ? "ON" : "OFF");
         telemetry.addData("Turret servo target", Shooter.turretTargetPositionPollen);
         telemetry.addData("Hood target", Shooter.hoodPollenPosition);
         telemetry.addData("In range (ready to fire)", shooter.inRange());

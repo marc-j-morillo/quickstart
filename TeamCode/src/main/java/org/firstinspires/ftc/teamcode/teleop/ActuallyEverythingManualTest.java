@@ -44,7 +44,7 @@ import java.util.List;
  *
  * The turret aims from the localizer pose (turretAutoAim). Aim point:
  *   useCustomTarget = false -> exactly what Shooter's turret aims at: the red goal point
- *                              (Shooter.redGoalX / redGoalY), mirrored across the field for blue
+ *                              (GoalTargets, right side), mirrored across the field for blue
  *   useCustomTarget = true  -> the fixed field point (targetX, targetY), in inches
  *
  * Alliance: isRedAlliance in Panels, or press x during init.
