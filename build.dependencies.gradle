@@ -28,7 +28,9 @@ dependencies {
 
     implementation 'com.pedropathing:telemetry:1.0.0'
 
-    implementation "com.bylazar:fullpanels:1.0.12"
+    // Sloth-compatible builds of Panels and FTC Dashboard (replace com.bylazar:fullpanels and
+    // com.acmerobotics.dashboard:dashboard, which do not work with Sloth hot reloading)
+    implementation "com.bylazar.sloth:fullpanels:0.3.2+1.0.13"
 
-    implementation 'com.acmerobotics.dashboard:dashboard:0.4.16'
+    implementation 'com.acmerobotics.slothboard:dashboard:0.3.2+0.6.0'
 }
