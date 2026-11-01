@@ -6,5 +6,15 @@ pluginManagement {
     }
 }
 
+// Fix AGP conflict when both ANDROID_PREFS_ROOT and ANDROID_USER_HOME environment variables are set
+try {
+    Class<?> pe = Class.forName("java.lang.ProcessEnvironment")
+    def field = pe.getDeclaredField("theCaseInsensitiveEnvironment")
+    field.setAccessible(true)
+    Map map = (Map) field.get(null)
+    map.remove("ANDROID_PREFS_ROOT")
+} catch (Throwable ignored) {
+}
+
 include ':FtcRobotController'
 include ':TeamCode'

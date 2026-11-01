@@ -150,12 +150,12 @@ public class ConceptAprilTag extends LinearOpMode {
         aprilTag = new AprilTagProcessor.Builder()
 
             // The following default settings are available to un-comment and edit as needed.
-            //.setDrawAxes(true) // Changed in V12.0
+            //.setDrawAxes(false)
+            //.setDrawCubeProjection(false)
             //.setDrawTagOutline(true)
             //.setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
             //.setTagLibrary(AprilTagGameDatabase.getCenterStageTagLibrary())
             //.setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
-            //.setDrawCubeProjection(false)
 
             // == CAMERA CALIBRATION ==
             // If you do not manually specify calibration parameters, the SDK will attempt
