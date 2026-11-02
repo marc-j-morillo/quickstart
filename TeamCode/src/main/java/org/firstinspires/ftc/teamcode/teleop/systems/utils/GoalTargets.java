@@ -13,10 +13,10 @@ import com.bylazar.configurables.annotations.IgnoreConfigurable;
  */
 @Configurable
 public class GoalTargets {
-    public static double redRightX = 60.0;
-    public static double redRightY = 65.0;
-    public static double redLeftX = 60.0;
-    public static double redLeftY = 76.5;
+    public static double redRightX = 58;
+    public static double redRightY = 58;
+    public static double redLeftX = 62.0;
+    public static double redLeftY = 83;
     public static double fieldWidth = 141.5; // inches
 
     // Which goal point is in use. The competition teleops switch it with gamepad2.
@@ -32,17 +32,6 @@ public class GoalTargets {
     /** Goal y for the current side (the mirror keeps y). */
     public static double goalY() {
         return leftSide ? redLeftY : redRightY;
-    }
-
-    // -------------- Shooting zone (y only) --------------
-    // Red RIGHT shoots from below the goal (y < goalY - shootingZoneMargin), red LEFT from above it
-    // (y > goalY + shootingZoneMargin). Blue is the other way round. Outside its zone the Shooter acts as if
-    // the robot were on the zone's edge (same x, same heading), so the turret doesn't swing around there.
-    public static double shootingZoneMargin = 5; // inches
-
-    /** True if the current alliance and side shoot from below the goal in y. */
-    public static boolean shootsFromBelow() {
-        return isRed != leftSide;
     }
 
     // -------------- Relocalize pose --------------

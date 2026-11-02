@@ -38,11 +38,14 @@ public class TurretPollen {
     public static double pwmLowerUs = 500;
     public static double pwmUpperUs = 2500;
 
+    // -------------- Output smoothing --------------
+    // The aim math is unchanged: only the position sent to the servos is smoothed (a low-pass filter), so a
+    // sudden big change in the target is spread over a short time instead of sent all at once, and quick
+    // back-and-forth jumps mostly cancel out. smoothingTimeMs = time to cover about 63% of a jump (about 3x this
+    // to get within 5% of it). Bigger = smoother but laggier. 0 = no smoothing (send the target as-is).
+    public static double smoothingTimeMs = 60;
+
     // -------------- Power reduction (no Axon programmer needed) --------------
-    // A servo in position mode pushes harder the further it is from its command. Moving the command toward the
-    // target at most this fast keeps that gap, and so the power, small. Lower = gentler but slower to track.
-    // 0 = no limit (jumps straight to the target).
-    public static double maxTurretDegPerSec = 300;
     // false = drive only the left servo and leave the right one unpowered (PWM off): half the torque, and the
     // two servos can't fight each other. Takes effect on the next applyHardwareConfig (opmode init).
     public static boolean rightServoEnabled = true;
@@ -98,25 +101,26 @@ public class TurretPollen {
     }
 
     /**
-     * Moves the turret toward a servo position, clamped to the travel limits. The command moves at most
-     * maxTurretDegPerSec, so call this every loop until it gets there.
+     * Points the turret at a servo position, clamped to the travel limits. Call every loop: the position sent
+     * moves smoothly toward the target (see smoothingTimeMs). The first call goes straight to the target.
      */
     public void update(double turretTargetPosition) {
         double target = Range.clip(turretTargetPosition, Math.min(minPosition, maxPosition), Math.max(minPosition, maxPosition));
 
         long now = System.nanoTime();
-        if (maxTurretDegPerSec > 0 && degreesPerPosition != 0) {
-            // First call starts from the current command; dt is capped so a long pause can't cause a jump
-            double dt = lastUpdateNanos == 0 ? 0 : Math.min((now - lastUpdateNanos) / 1e9, 0.1);
-            double maxStep = maxTurretDegPerSec / Math.abs(degreesPerPosition) * dt;
-            target = commandedPosition + Range.clip(target - commandedPosition, -maxStep, maxStep);
+        double output = target;
+        if (smoothingTimeMs > 0 && lastUpdateNanos != 0) {
+            // Time-based, so it smooths the same at any loop time; dt is capped so a long pause can't cause a jump
+            double dtMs = Math.min((now - lastUpdateNanos) / 1e6, 100);
+            double alpha = 1 - Math.exp(-dtMs / smoothingTimeMs);
+            output = commandedPosition + alpha * (target - commandedPosition);
         }
         lastUpdateNanos = now;
 
-        setRawPosition(target);
+        setRawPosition(output);
     }
 
-    /** Sets the servo position right away, ignoring the travel limits and speed limit (only clipped to 0..1). For tuning. */
+    /** Sets the servo position right away, ignoring the travel limits and smoothing (only clipped to 0..1). For tuning. */
     public void setRawPosition(double position) {
         commandedPosition = Range.clip(position, 0, 1);
         if (outputEnabled) sendCommandedPosition();

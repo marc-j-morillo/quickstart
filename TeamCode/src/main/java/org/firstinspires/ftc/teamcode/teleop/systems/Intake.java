@@ -64,15 +64,22 @@ public class Intake {
     public static double blockerOpen = 0.6;
     public static double blockerClosed = 0.85;
 
-    //FLOWER WEDGE POSITIONS
-    public static double flowerWedgeDown = 0; // TEMPORARY VALUE
-    public static double flowerWedgeUp = .5; // TEMPORARY VALUE
+    //FLOWER WEDGE POSITIONS (each servo has its own; find them with FlowerWedgeTest, which edits these)
+    public static double leftWedgeDown = 0.63;   // TEMPORARY VALUE
+    public static double leftWedgeUp = 0;    // TEMPORARY VALUE
+    public static double rightWedgeDown = 0.6;  // TEMPORARY VALUE
+    public static double rightWedgeUp = 0;   // TEMPORARY VALUE
     public static double flowerWedgeDebounceSeconds = 0.5;
+
+    /** Puts both wedge servos at their own up or down position. Used here and by the teleops/tests. */
+    public static void setFlowerWedge(Servo left, Servo right, boolean down) {
+        left.setPosition(down ? leftWedgeDown : leftWedgeUp);
+        right.setPosition(down ? rightWedgeDown : rightWedgeUp);
+    }
     public boolean flowerWedgeIsDown;
 
-    // Flower wedge is disabled for now. Set to true to bring it back (needs the
-    // flowerWedgeLeft / flowerWedgeRight servos in the robot config).
-    public static final boolean flowerWedgeEnabled = false;
+    // Flower wedge on/off. Needs the flowerWedgeLeft / flowerWedgeRight servos in the robot config.
+    public static final boolean flowerWedgeEnabled = true;
     public ElapsedTime flowerWedgeWait;
 
     //MOTOR DIRECTIONS (checked on the robot with the motors in the correct ports). Applied at init.
@@ -126,19 +133,13 @@ public class Intake {
             intakePower = dormant;
             transferPollenBlocker.setPosition(blockerClosed);
             //transferNectar.setPosition(blockerClosed);
-            if (flowerWedgeEnabled) {
-                flowerWedgeLeft.setPosition(flowerWedgeUp);
-                flowerWedgeRight.setPosition(flowerWedgeUp);
-            }
+            if (flowerWedgeEnabled) setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, false);
             //led.setPosition(0);
         } else {
             intakePower = dormant;
             transferPollenBlocker.setPosition(blockerClosed);
             //transferNectar.setPosition(blockerClosed);
-            if (flowerWedgeEnabled) {
-                flowerWedgeLeft.setPosition(flowerWedgeUp);
-                flowerWedgeRight.setPosition(flowerWedgeUp);
-            }
+            if (flowerWedgeEnabled) setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, false);
             //led.setPosition(.6);
         }
     }
@@ -146,10 +147,7 @@ public class Intake {
 
     // -------------- AUTONOMOUS UPDATE METHOD --------------
     public void update(boolean flowerWedgeIsActive) {
-        if (flowerWedgeEnabled) {
-            flowerWedgeLeft.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
-            flowerWedgeRight.setPosition(flowerWedgeIsActive ? flowerWedgeDown : flowerWedgeUp);
-        }
+        if (flowerWedgeEnabled) setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, flowerWedgeIsActive);
 
 
         switch (Robot.transportState) {
@@ -203,10 +201,8 @@ public class Intake {
         // }
 
         if (flowerWedgeEnabled) {
-            // call setFlowerWedge once: it consumes the bumper press, so a second call would miss it
-            double wedgePosition = setFlowerWedge(gamepad1);
-            flowerWedgeLeft.setPosition(wedgePosition);
-            flowerWedgeRight.setPosition(wedgePosition);
+            // call toggleFlowerWedge once: it consumes the bumper press, so a second call would miss it
+            setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, toggleFlowerWedge(gamepad1));
         }
         //transferNectar.setPosition(blockerPosition);
 
@@ -245,25 +241,14 @@ public class Intake {
         transferPollenBlocker.setPosition(blockerPosition);
     }
 
-    public double setFlowerWedge(Gamepad gamepad1) {
+    /** Returns whether the wedge should be down, toggled with the left bumper. */
+    public boolean toggleFlowerWedge(Gamepad gamepad1) {
         // Raise and lower the flower wedge with the left bumper,
         // but only if flowerWedgeDebounceSeconds have passed since the last press to prevent rapid toggling
         if (gamepad1.leftBumperWasPressed() && flowerWedgeWait.seconds() > flowerWedgeDebounceSeconds) {
             flowerWedgeWait.reset();
-            if (flowerWedgeIsDown) {
-                flowerWedgeIsDown = false;
-                return flowerWedgeUp;
-            } else {
-                flowerWedgeIsDown = true;
-                return flowerWedgeDown;
-            }
+            flowerWedgeIsDown = !flowerWedgeIsDown;
         }
-        else {
-            if (flowerWedgeIsDown) {
-                return flowerWedgeDown;
-            } else {
-                return flowerWedgeUp;
-            }
-        }
+        return flowerWedgeIsDown;
     }
 }

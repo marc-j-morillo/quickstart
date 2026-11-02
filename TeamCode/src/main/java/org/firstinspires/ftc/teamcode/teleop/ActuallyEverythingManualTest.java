@@ -27,6 +27,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Flywheel;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.HoodPollen;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
+import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
@@ -57,6 +58,9 @@ import java.util.List;
  *   share ....................... reset pose to your alliance's corner
  *   dpad down ................... reset heading only (keeps x/y)
  *   dpad up ..................... relocalize x/y to the shooting target (keeps heading): park the robot on the target first
+ *
+ * gamepad2:
+ *   y ........................... toggle the flower wedge up / down
  */
 @TeleOp(name = "ActuallyEverythingManualTest", group = "TeleOp")
 @Configurable
@@ -69,6 +73,11 @@ public class ActuallyEverythingManualTest extends OpMode {
     public static final double blockerOpen = 0.6;
     public static final double blockerClosed = 0.85;
     public double blockerPosition = blockerClosed;
+
+    //  ------------- FLOWER WEDGE -------------
+    // Positions come from Intake (left/right WedgeUp / WedgeDown, editable in Panels). Starts up.
+    private Servo flowerWedgeLeft, flowerWedgeRight;
+    private boolean flowerWedgeIsDown = false;
     private boolean rumbling = false;
 
     //  ------------- INTAKE -------------
@@ -186,6 +195,13 @@ public class ActuallyEverythingManualTest extends OpMode {
         // ----- Blocker -----
         blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
+
+        // ----- Flower wedge -----
+        if (Intake.flowerWedgeEnabled) {
+            flowerWedgeLeft = hardwareMap.get(Servo.class, "flowerWedgeLeft");
+            flowerWedgeRight = hardwareMap.get(Servo.class, "flowerWedgeRight");
+            flowerWedgeRight.setDirection(Servo.Direction.REVERSE);
+        }
 
         // ----- Intake -----
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
@@ -331,6 +347,13 @@ public class ActuallyEverythingManualTest extends OpMode {
         intakeMotor.setPower(intakePower);
 
 
+        // ================= FLOWER WEDGE =================
+        if (gamepad2.yWasPressed()) flowerWedgeIsDown = !flowerWedgeIsDown;
+        if (Intake.flowerWedgeEnabled) {
+            Intake.setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, flowerWedgeIsDown);
+        }
+
+
         // ================= AIM =================
         updateAim();
 
@@ -361,6 +384,7 @@ public class ActuallyEverythingManualTest extends OpMode {
 
         telemetry.addLine("VALUES:");
         telemetry.addData("Blocker position: ", blockerPosition);
+        telemetry.addData("Flower wedge (gamepad2 y)", flowerWedgeIsDown ? "DOWN" : "UP");
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
         telemetry.addData("Transfer current (last stall check, mA): ", transferCurrent);

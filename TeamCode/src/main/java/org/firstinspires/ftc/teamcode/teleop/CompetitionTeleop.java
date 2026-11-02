@@ -16,6 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
@@ -26,25 +27,35 @@ import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 import java.util.List;
 
 /**
- * Competition teleop, based on ActuallyEverythingLutTest. RedTeleop and BlueTeleop only pick the alliance.
- * The Shooter aims the turret and sets the hood and flywheel from the LUTs, at the GoalTargets point
- * for the current side.
+ * Competition teleop. RedTeleop and BlueTeleop only pick the alliance.
+ * The Shooter aims the turret and sets the hood from the LUTs, at the GoalTargets point for the current side.
+ * The flywheel always targets the LUT speed for the current distance (plus the rpm offset), so it's ready to shoot.
+ *
+ * States (picked from gamepad1 every loop):
+ *   SHOOTING .. gate open (right bumper held) AND right trigger: intake + transfer feed at shootTransferPower,
+ *               no transfer stall check, flywheel P from Shooter.lutShootingKps (by distance), or
+ *               Shooter.shooterP if Shooter.useShootingKpLut is false
+ *   INTAKING .. right trigger (gate closed): intake + transfer with the stall check, flywheel P = Shooter.shooterP
+ *   IDLING .... anything else (just driving): left trigger outtakes, flywheel P = Shooter.shooterP
+ *   The flywheel's I, D, kV and kS are Shooter's in every state.
  *
  * gamepad1 (driver):
  *   left stick / right stick .... drive (field-centric) / turn
- *   right trigger ............... intake (with transfer stall detection)
+ *   right trigger ............... intake, or shoot while the gate is open
  *   left trigger ................ outtake
- *   a (hold) .................... open the blocker, closed otherwise (rumbles while it's open)
- *   right bumper (hold) ......... spin the flywheel up to the LUT speed (idles at Shooter.idleRpm otherwise)
- *   share ....................... relocalize to the GoalTargets relocalize pose (configurable, blue mirrored)
+ *   right bumper (hold) ......... open the gate (rumbles while it's open)
  *   dpad down ................... reset heading only (keeps x/y)
  *   dpad up ..................... relocalize x/y to the current goal point (keeps heading)
  *
  * gamepad2 (operator), also works during init:
- *   left bumper / right bumper .. aim at the LEFT / RIGHT goal point
- *   dpad left / dpad right ...... turret offset +3 / -3 degrees (turns the aim left / right)
- *   dpad up / dpad down ......... flywheel offset +15 / -15 rpm
- *   y ........................... reset both offsets to 0
+ *   start ....................... relocalize to the GoalTargets relocalize pose (configurable, blue mirrored)
+ *   right bumper / left bumper .. flywheel offset +10 / -10 rpm
+ *   dpad right / dpad left ...... turret offset 3 degrees right / left
+ *   dpad up ..................... heading only: back against a wall, facing +y (heading = 90 deg)
+ *   a ........................... reset all offsets to 0
+ *   y ........................... toggle the flower wedge up / down (positions: Intake left/right WedgeUp / WedgeDown)
+ *
+ * gamepad1 x / b ................ aim at the LEFT / RIGHT goal point
  *
  * Loop time: manual bulk reads (one read per hub per loop), voltage read every
  * Robot.voltageReadIntervalMs, transfer current read every 5th loop and only while intaking, rumble only
@@ -54,36 +65,46 @@ public abstract class CompetitionTeleop extends OpMode {
     /** true for RedTeleop, false for BlueTeleop. */
     protected abstract boolean isRedAlliance();
 
+    public enum State { INTAKING, IDLING, SHOOTING }
+    private State state = State.IDLING;
+
     // ------------- DRIVER ADJUSTMENTS -------------
     public static final double turretOffsetStepDeg = 3;
-    public static final double rpmOffsetStep = 15;
+    public static final double rpmOffsetStep = 10;
 
-    // ------------- BLOCKER -------------
-    public static final double blockerOpen = 0.6;
-    public static final double blockerClosed = 0.85;
-    private Servo blocker;
+    // ------------- GATE (blocker) -------------
+    public static final double gateOpen = 0.6;
+    public static final double gateClosed = 0.85;
+    private Servo gate;
     private boolean rumbling = false;
 
-    // ------------- INTAKE -------------
+    // ------------- FLOWER WEDGE -------------
+    // Positions come from Intake (left/right WedgeUp / WedgeDown, editable in Panels). Starts up.
+    private Servo flowerWedgeLeft, flowerWedgeRight;
+    private boolean flowerWedgeIsDown = false;
+
+    // ------------- INTAKE / TRANSFER -------------
     // Directions checked on the robot: intake reversed, transfer forward.
     public static final boolean transferReversed = false;
     public static final boolean intakeReversed = true;
-    public static final double intaking = 1;
-    public static final double transferMult = 0.7;
-    public static final double intakeStallDraw = 5000; // mA on the transfer = it's full
-    public static final int stallCheckEveryLoops = 5;  // current isn't in the bulk read, so don't read it every loop
+    public static final double intakePower = 1;
+    public static final double intakeShootPower = .95;
+    public static final double intakeTransferPower = 0.7; // transfer while intaking (stops when it stalls)
+    public static final double shootTransferPower = .72;    // transfer while shooting (no stall check)
+    public static final double outtakePower = -1;
+    public static final double intakeStallDraw = 7000;    // mA on the transfer = it's full
+    public static final int stallCheckEveryLoops = 5;     // current isn't in the bulk read, so don't read it every loop
 
     private DcMotorEx transferMotor, intakeMotor;
     private boolean transferFull = false;
     private int loopCount = 0;
 
     // ------------- DRIVETRAIN -------------
-    public static final double stickThreshold = 0.05; // for isDriving
+    public static final double triggerThreshold = 0.1;
     public static final double redDriverHeading = 0;
     public static final double blueDriverHeading = 180;
 
     private DcMotorEx leftFront, leftRear, rightFront, rightRear;
-    private boolean isDriving = false;
 
     // ------------- PINPOINT -------------
     public static final double pinpointXOffsetIn = 2.362;
@@ -108,9 +129,16 @@ public abstract class CompetitionTeleop extends OpMode {
         GlobalVars.isRed = isRedAlliance();
         GlobalVars.inAuto = false;
 
-        // ----- Blocker -----
-        blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
-        blocker.setDirection(Servo.Direction.FORWARD);
+        // ----- Gate -----
+        gate = hardwareMap.get(Servo.class, "transferPollenBlocker");
+        gate.setDirection(Servo.Direction.FORWARD);
+
+        // ----- Flower wedge -----
+        if (Intake.flowerWedgeEnabled) {
+            flowerWedgeLeft = hardwareMap.get(Servo.class, "flowerWedgeLeft");
+            flowerWedgeRight = hardwareMap.get(Servo.class, "flowerWedgeRight");
+            flowerWedgeRight.setDirection(Servo.Direction.REVERSE);
+        }
 
         // ----- Intake -----
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
@@ -148,8 +176,6 @@ public abstract class CompetitionTeleop extends OpMode {
         startPose = FollowerPose.takeStartPose(); // auto's end pose, used once; middle of the field, 0 deg if no auto ran
 
         // ----- Shooter -----
-        // transportState is static, so it survives between opmode runs - start from a known state
-        Robot.transportState = Robot.TransportState.HOME;
         Shooter.useTargetOverride = false;
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         shooter = new Shooter(hardwareMap); // also resets the offsets and the side to RIGHT
@@ -166,7 +192,7 @@ public abstract class CompetitionTeleop extends OpMode {
     @Override
     public void init_loop() {
         seedPinpointPose();
-        updateDriverAdjustments();
+        updateOperator();
         telemetry.update();
     }
 
@@ -177,9 +203,6 @@ public abstract class CompetitionTeleop extends OpMode {
         // ================= LOCALIZER =================
         seedPinpointPose(); // no-op once seeded
 
-        if (gamepad1.shareWasPressed()) {
-            setFieldPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
-        }
         if (gamepad1.dpadDownWasPressed()) {
             setFieldPose(FollowerPose.botX, FollowerPose.botY, isRedAlliance() ? 0 : 180);
         }
@@ -192,34 +215,76 @@ public abstract class CompetitionTeleop extends OpMode {
         updateLocalizer();
 
         // ================= OPERATOR =================
-        updateDriverAdjustments();
+        updateOperator();
 
         // ================= DRIVETRAIN =================
         driveMecanum();
 
-        // ================= BLOCKER =================
-        boolean blockerIsOpen = gamepad1.a; // open only while a is held
-        blocker.setPosition(blockerIsOpen ? blockerOpen : blockerClosed);
-        if (blockerIsOpen != rumbling) {
-            if (blockerIsOpen) gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);
+        // ================= GATE =================
+        boolean gateIsOpen = gamepad1.right_bumper; // open only while held
+        gate.setPosition(gateIsOpen ? gateOpen : gateClosed);
+        if (gateIsOpen != rumbling) {
+            if (gateIsOpen) gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);
             else gamepad1.stopRumble();
-            rumbling = blockerIsOpen;
+            rumbling = gateIsOpen;
         }
 
-        // ================= INTAKE =================
-        updateIntake();
+        // ================= STATE =================
+        boolean rightTrigger = gamepad1.right_trigger > triggerThreshold;
+        if (gateIsOpen && rightTrigger) state = State.SHOOTING;
+        else if (rightTrigger) state = State.INTAKING;
+        else state = State.IDLING;
 
-        // ================= SHOOTER =================
-        Robot.transportState = gamepad1.right_bumper
-                ? Robot.TransportState.POWER_SHOOTER
-                : Robot.TransportState.HOME;
+        // ================= SHOOTER AIM =================
+        shooter.updateAim(); // turret, hood and the LUT lookups, in every state
 
         // Voltage isn't in the bulk read, so only read it every Robot.voltageReadIntervalMs
         if (voltage == 0 || voltageTimer.milliseconds() >= Robot.voltageReadIntervalMs) {
             voltage = voltageSensor.getVoltage();
             voltageTimer.reset();
         }
-        shooter.update(Robot.nominalVoltage / voltage, isDriving);
+        double voltageMultiplier = Robot.nominalVoltage / voltage;
+        double flywheelTarget = shooter.lutTargetVelocity();
+
+        // ================= STATE ACTIONS =================
+        double intake, transfer;
+        switch (state) {
+            case SHOOTING:
+                // Feed everything into the flywheel: no stall check, the transfer is emptying
+                intake = intakeShootPower;
+                transfer = shootTransferPower;
+                transferFull = false;
+                double shootingP = Shooter.useShootingKpLut ? Shooter.lutShootingKp : Shooter.shooterP;
+                shooter.runFlywheel(flywheelTarget, shootingP, voltageMultiplier);
+                break;
+
+            case INTAKING:
+                loopCount = (loopCount + 1) % stallCheckEveryLoops;
+                if (!transferFull && loopCount == 0
+                        && transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > intakeStallDraw) {
+                    transferFull = true;
+                }
+                intake = intakePower;
+                transfer = transferFull ? 0 : intakeTransferPower;
+                shooter.runFlywheel(flywheelTarget, Shooter.shooterP, voltageMultiplier);
+                break;
+
+            case IDLING:
+            default:
+                boolean outtaking = gamepad1.left_trigger > triggerThreshold;
+                intake = outtaking ? outtakePower : 0;
+                transfer = outtaking ? outtakePower : 0;
+                if (outtaking) transferFull = false; // balls pushed back out
+                shooter.runFlywheel(flywheelTarget, Shooter.shooterP, voltageMultiplier);
+                break;
+        }
+        intakeMotor.setPower(intake);
+        transferMotor.setPower(transfer);
+
+        // ================= FLOWER WEDGE =================
+        if (Intake.flowerWedgeEnabled) {
+            Intake.setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, flowerWedgeIsDown);
+        }
 
         telemetry.update(); // only actually sends every transmission interval
     }
@@ -228,48 +293,30 @@ public abstract class CompetitionTeleop extends OpMode {
     // Operator (gamepad2)
     // ------------------------------------------------------------------
 
-    private void updateDriverAdjustments() {
-        if (gamepad2.leftBumperWasPressed()) GoalTargets.leftSide = true;
-        if (gamepad2.rightBumperWasPressed()) GoalTargets.leftSide = false;
+    private void updateOperator() {
+        if (gamepad2.startWasPressed()) {
+            setFieldPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+        }
 
-        if (gamepad2.dpadLeftWasPressed()) Shooter.turretAngleOffset += turretOffsetStepDeg;
+        // Heading only: robot's back flat against a wall that runs along x, facing +y (90 deg, a field heading,
+        // so the same for both alliances). x/y are left alone.
+        if (gamepad2.dpadUpWasPressed()) pinpoint.setHeading(90, AngleUnit.DEGREES);
+
+        if (gamepad2.rightBumperWasPressed()) Shooter.velocityOffsetRpm += rpmOffsetStep;
+        if (gamepad2.leftBumperWasPressed()) Shooter.velocityOffsetRpm -= rpmOffsetStep;
+        // Turret angles are counterclockwise positive, so right is negative
         if (gamepad2.dpadRightWasPressed()) Shooter.turretAngleOffset -= turretOffsetStepDeg;
-        if (gamepad2.dpadUpWasPressed()) Shooter.velocityOffsetRpm += rpmOffsetStep;
-        if (gamepad2.dpadDownWasPressed()) Shooter.velocityOffsetRpm -= rpmOffsetStep;
+        if (gamepad2.dpadLeftWasPressed()) Shooter.turretAngleOffset += turretOffsetStepDeg;
 
-        if (gamepad2.yWasPressed()) {
+        if (gamepad2.aWasPressed()) {
             Shooter.turretAngleOffset = 0;
             Shooter.velocityOffsetRpm = 0;
         }
-    }
 
-    // ------------------------------------------------------------------
-    // Intake
-    // ------------------------------------------------------------------
+        if (gamepad2.yWasPressed()) flowerWedgeIsDown = !flowerWedgeIsDown; // servos are set in loop()
 
-    private void updateIntake() {
-        loopCount = (loopCount + 1) % stallCheckEveryLoops;
-        double intakePower, transferPower;
-
-        if (gamepad1.right_trigger > 0.1) {
-            intakePower = intaking;
-            if (!transferFull && loopCount == 0
-                    && transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > intakeStallDraw) {
-                transferFull = true;
-            }
-            transferPower = transferFull ? 0 : intaking * transferMult;
-        } else if (gamepad1.left_trigger > 0.1) {
-            intakePower = -intaking;
-            transferPower = -intaking;
-            transferFull = false;
-        } else {
-            intakePower = 0;
-            transferPower = 0;
-            transferFull = false;
-        }
-
-        transferMotor.setPower(transferPower);
-        intakeMotor.setPower(intakePower);
+        if (gamepad1.xWasPressed()) GoalTargets.leftSide = true;
+        if (gamepad1.bWasPressed()) GoalTargets.leftSide = false;
     }
 
     // ------------------------------------------------------------------
@@ -308,10 +355,6 @@ public abstract class CompetitionTeleop extends OpMode {
         double y = -gamepad1.left_stick_y;  // forward
         double x = gamepad1.left_stick_x;   // strafe
         double rx = gamepad1.right_stick_x; // turn
-
-        isDriving = Math.abs(x) > stickThreshold
-                || Math.abs(y) > stickThreshold
-                || Math.abs(rx) > stickThreshold;
 
         // Rotate the stick by the robot's heading relative to the driver
         double driverHeading = isRedAlliance() ? redDriverHeading : blueDriverHeading;

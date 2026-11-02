@@ -22,6 +22,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
@@ -55,10 +56,14 @@ import java.util.List;
  *   dpad down ................... toggle the turret servos on / off (off = limp, aiming keeps running)
  *   dpad up ..................... relocalize x/y to the shooting target (keeps heading): park the robot on the target first
  *
+ * gamepad2:
+ *   dpad up ..................... heading only: back against a wall, facing +y (heading = 90 deg)
+ *   y ........................... toggle the flower wedge up / down
+ *
  * Notes:
  *   - Shooter.update zeroes the flywheel P and kV terms while isDriving is true, so the flywheel
  *     only spins up when the drive sticks are released.
- *   - Without the bumper the Shooter idles the flywheel at Shooter.idleRpm (that is how the real
+ *   - Without the bumper the Shooter idles the flywheel at Shooter.idleVelocity (that is how the real
  *     robot behaves); the bumper spins it up to the LUT speed.
  */
 @TeleOp(name = "ActuallyEverythingLutTest", group = "TeleOp")
@@ -72,6 +77,11 @@ public class ActuallyEverythingLutTest extends OpMode {
     public static final double blockerOpen = 0.6;
     public static final double blockerClosed = 0.85;
     public double blockerPosition = blockerClosed;
+
+    //  ------------- FLOWER WEDGE -------------
+    // Positions come from Intake (left/right WedgeUp / WedgeDown, editable in Panels). Starts up.
+    private Servo flowerWedgeLeft, flowerWedgeRight;
+    private boolean flowerWedgeIsDown = false;
     private boolean rumbling = false;
 
     //  ------------- INTAKE -------------
@@ -81,7 +91,7 @@ public class ActuallyEverythingLutTest extends OpMode {
     public double intakePower = dormant;
     public double transferPower = dormant;
 
-    public static double intakeStallDraw = 5000;
+    public static double intakeStallDraw = 7000;
     public boolean transferFull = false;
     public double loopCount = 0;
     public double transferCurrent = 0; // mA, only read for the stall check (current isn't in the bulk read)
@@ -98,9 +108,9 @@ public class ActuallyEverythingLutTest extends OpMode {
 
     //MOTOR POWERS
     public static double dormant = 0;
-    public static double intaking = 1;
+    public static double intaking = .95;
     public double outtaking = intaking * -1;
-    public static double transferMult = 0.7;
+    public static double transferMult = 0.72;
     public double semiTransferring = intaking * transferMult;
 
 
@@ -156,6 +166,13 @@ public class ActuallyEverythingLutTest extends OpMode {
         // ----- Blocker -----
         blocker = hardwareMap.get(Servo.class, "transferPollenBlocker");
         blocker.setDirection(Servo.Direction.FORWARD);
+
+        // ----- Flower wedge -----
+        if (Intake.flowerWedgeEnabled) {
+            flowerWedgeLeft = hardwareMap.get(Servo.class, "flowerWedgeLeft");
+            flowerWedgeRight = hardwareMap.get(Servo.class, "flowerWedgeRight");
+            flowerWedgeRight.setDirection(Servo.Direction.REVERSE);
+        }
 
         // ----- Intake -----
         transferMotor = hardwareMap.get(DcMotorEx.class, "transferMotor");
@@ -237,6 +254,10 @@ public class ActuallyEverythingLutTest extends OpMode {
         if (gamepad1.dpadLeftWasPressed()) {
             setFieldPose(FollowerPose.botX, FollowerPose.botY, isRed ? 0 : 180);
         }
+        if (gamepad2.dpadUpWasPressed()) {
+            // Heading only: back flat against a wall that runs along x, facing +y. x/y are left alone.
+            pinpoint.setHeading(90, AngleUnit.DEGREES);
+        }
         if (gamepad1.dpadDownWasPressed()) {
             // Only the turret servo signal turns off: the Shooter keeps aiming, so it's back on target when re-enabled
             shooter.setTurretOutputEnabled(!shooter.isTurretOutputEnabled());
@@ -301,6 +322,13 @@ public class ActuallyEverythingLutTest extends OpMode {
         intakeMotor.setPower(intakePower);
 
 
+        // ================= FLOWER WEDGE =================
+        if (gamepad2.yWasPressed()) flowerWedgeIsDown = !flowerWedgeIsDown;
+        if (Intake.flowerWedgeEnabled) {
+            Intake.setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, flowerWedgeIsDown);
+        }
+
+
         // ================= SHOOTER (LUT) =================
         // Aim-point override: Shooter uses this for turret aim, hood angle and flywheel velocity
         Shooter.useTargetOverride = useCustomTarget;
@@ -329,6 +357,7 @@ public class ActuallyEverythingLutTest extends OpMode {
 
         telemetry.addLine("VALUES:");
         telemetry.addData("Blocker position: ", blockerPosition);
+        telemetry.addData("Flower wedge (gamepad2 y)", flowerWedgeIsDown ? "DOWN" : "UP");
         telemetry.addData("Blocker is open (t/f): ", blockerPosition == blockerOpen);
         telemetry.addData("Transfer power: ", transferPower);
         telemetry.addData("Transfer current (last stall check, mA): ", transferCurrent);
