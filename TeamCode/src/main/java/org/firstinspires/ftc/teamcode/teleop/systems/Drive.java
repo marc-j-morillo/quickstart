@@ -1,126 +1,125 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botX;
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.botY;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
-import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
-import com.arcrobotics.ftclib.controller.PIDFController;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 import com.pedropathing.math.Pose;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.ManualDrive;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
-
+/**
+ * Drivetrain + localization through the Pedro follower (pedro/Constants: Mecanum drivetrain, Pinpoint localizer).
+ * There is only one follower: autos path with it through Robot.getFollower(), teleops drive it with drive(gamepad).
+ * Every update publishes the pose to FollowerPose, which the Shooter aims from.
+ *
+ * Pedro's DrivePowers are (forward, strafe, turn) with strafe + = left and turn + = counterclockwise,
+ * so the stick x axes are negated.
+ */
 @Configurable
 public class Drive {
-
-
     Follower follower;
-    /*
-//    public static double secondaryDriveP = .01, secondaryDriveI, secondaryDriveD = .001, secondaryDriveF;
-    public static double driveP = 0, driveI = 0, driveD = 0, driveF = 0; // Change these values
-    private PIDFController turnController = new PIDFController(driveP, driveI, driveD, driveF);
-//    private PIDFController secondaryTurnController = new PIDFController(secondaryDriveP, secondaryDriveI, secondaryDriveD, secondaryDriveF);
-//    public double IMUOffset;
-    */
+
     public boolean fieldCentric;
 
     @IgnoreConfigurable public static boolean isDriving = false;
 
-    public static double stickThreshold = 0.05; // for isDriving calcs
+    public static double stickThreshold = 0.05;  // for isDriving
+    public static double strafeMultiplier = 1.1; // counteracts imperfect mecanum strafing
 
-    // Relocalization (share = corner pose, dpad down = heading only), field inches / degrees
-    public static double redCornerX = 113.520177165, blueCornerX = 31.479822835, cornerY = 136.4, cornerHeading = 90;
-    public static double redResetHeading = 0, blueResetHeading = 180;
+    // Field-centric: "away from the driver" is this field heading (deg). Also what resetHeading() sets.
+    public static double redDriverHeading = 0, blueDriverHeading = 180;
 
 
     public Drive(HardwareMap hardwareMap, boolean fieldCentric) {
-        follower = Constants.create(hardwareMap);
-        follower.setPose(startPose);
-        follower.update();
+        follower = Constants.create(hardwareMap); // resets the Pinpoint and waits for its IMU to recalibrate
+        // The pose the last auto ended at (used once), or the middle of the field at 0 deg if no auto ran.
+        // Autos set their own start pose right after this.
+        follower.setPose(FollowerPose.takeStartPose());
+        update();
 
         this.fieldCentric = fieldCentric;
     }
 
-    public void update(Gamepad gamepad1) {
+    /**
+     * Teleop drive from gamepad sticks (left stick = translate, right stick x = turn), field-centric if fieldCentric.
+     * Also updates the follower and FollowerPose, so call this instead of update() once per loop.
+     */
+    public void drive(Gamepad gamepad) {
+        double forward = -gamepad.left_stick_y;
+        double strafe = -gamepad.left_stick_x; // Pedro: + = left
+        double turn = -gamepad.right_stick_x;  // Pedro: + = counterclockwise
 
-        // Set isDriving and fieldCentric according to gamepad imputs
-        if (Math.abs(gamepad1.left_stick_x) > stickThreshold
-                || Math.abs(gamepad1.left_stick_y) > stickThreshold
-                || Math.abs(gamepad1.right_stick_x) > stickThreshold) {
-            isDriving = true;
-        } else {
-            isDriving = false;
-        }
+        isDriving = Math.abs(forward) > stickThreshold
+                || Math.abs(strafe) > stickThreshold
+                || Math.abs(turn) > stickThreshold;
 
-        if (gamepad1.leftStickButtonWasPressed()) {
-            fieldCentric = !fieldCentric;
-        }
+        DrivePowers powers = fieldCentric
+                // Rotates the stick by -(heading - driverHeading), so "up" is always away from the driver
+                ? ManualDrive.fieldCentric(forward, strafe, turn, follower.pose().heading(), -Math.toRadians(driverHeading()))
+                : new DrivePowers(forward, strafe, turn);
+        follower.manual(new DrivePowers(powers.forward(), powers.strafe() * strafeMultiplier, powers.turn()));
 
-        // Take inputs to relocalize
-        if (gamepad1.dpadDownWasPressed()) {
-            resetIMU();
-        }
-
-        if (gamepad1.shareWasPressed()) {
-            resetLocalization();
-        }
-
-        // Drive
-        if (fieldCentric) {
-            DrivePowers powers = ManualDrive.fieldCentric(
-                    -gamepad1.left_stick_y,
-                    gamepad1.left_stick_x,
-                    gamepad1.right_stick_x,
-                    follower.pose().heading()
-            );
-            follower.manual(powers);
-        } else {
-            follower.manual(
-                    -gamepad1.left_stick_y,
-                    gamepad1.left_stick_x,
-                    gamepad1.right_stick_x
-            );
-        }
-        follower.update();
-
-        // Update the FolowerPose.java variables
-        FollowerPose.update(follower.pose());
+        update();
     }
 
+    /**
+     * Teleop drive with the Robot-teleop buttons: left stick button toggles field-centric, dpad down resets the
+     * heading, share relocalizes to the GoalTargets relocalize pose.
+     */
+    public void update(Gamepad gamepad1) {
+        if (gamepad1.leftStickButtonWasPressed()) fieldCentric = !fieldCentric;
+        if (gamepad1.dpadDownWasPressed()) resetHeading();
+        if (gamepad1.shareWasPressed()) relocalize();
+
+        drive(gamepad1);
+    }
+
+    /** Updates the follower (localizer + whatever it's doing) and FollowerPose. For autos and when not driving. */
     public void update() {
         follower.update();
         FollowerPose.update(follower.pose());
     }
 
-    public void resetLocalization() {
-        Pose cornerPose;
-        if (isRed) {
-            cornerPose = new Pose(redCornerX, cornerY, Math.toRadians(cornerHeading));
-        } else {
-            cornerPose = new Pose(blueCornerX, cornerY, Math.toRadians(cornerHeading));
-        }
-        follower.setPose(cornerPose);
+    public Follower getFollower() {
+        return follower;
     }
 
-    public void resetIMU() {
-        Pose newHeadingPose;
-        if (isRed) {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(redResetHeading));
-        } else {
-            newHeadingPose = new Pose(botX, botY, Math.toRadians(blueResetHeading));
-        }
-        follower.setPose(newHeadingPose);
+    // -------------- Relocalization (field inches / degrees) --------------
+
+    public void setPose(double xInches, double yInches, double headingDegrees) {
+        follower.setPose(new Pose(xInches, yInches, Math.toRadians(headingDegrees)));
+    }
+
+    /** Moves x/y only, keeps the heading. */
+    public void setPosition(double xInches, double yInches) {
+        follower.setX(xInches);
+        follower.setY(yInches);
+    }
+
+    /** Sets the heading only, keeps x/y. */
+    public void setHeading(double headingDegrees) {
+        follower.setHeading(Math.toRadians(headingDegrees));
+    }
+
+    /** Heading reset with the robot facing away from the driver. */
+    public void resetHeading() {
+        setHeading(driverHeading());
+    }
+
+    /** Relocalize to the GoalTargets relocalize pose (configurable, blue mirrored). */
+    public void relocalize() {
+        setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+    }
+
+    public static double driverHeading() {
+        return isRed ? redDriverHeading : blueDriverHeading;
     }
 }

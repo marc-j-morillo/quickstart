@@ -20,6 +20,8 @@ import com.qualcomm.robotcore.util.Range;
 import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 @Configurable
 public class Intake {
     // -------------- Hardware --------------
@@ -85,6 +87,19 @@ public class Intake {
     //MOTOR DIRECTIONS (checked on the robot with the motors in the correct ports). Applied at init.
     public static boolean intakeReversed = true;
     public static boolean transferReversed = false;
+
+    // -------------- Direct control (competition teleop) --------------
+    // runIntake / runFeed / runOuttake / stopRollers / setGateOpen / setFlowerWedgeDown, called by the opmode's
+    // own state machine instead of update(). Separate powers from the transport-state ones above, which autos use.
+    public static double directIntakePower = 1;
+    public static double directIntakeTransferPower = 0.7; // transfer while intaking (stops when it stalls)
+    public static double directFeedTransferPower = 1;     // transfer while shooting (no stall check)
+    public static double directOuttakePower = -1;
+    public static double transferStallMilliamps = 5000;   // transfer current above this while intaking = it's full
+    public static int stallCheckEveryLoops = 5;           // current isn't in the bulk read, so don't read it every loop
+
+    private boolean transferFull = false;
+    private int stallCheckCount = 0;
 
 
 
@@ -239,6 +254,56 @@ public class Intake {
         intake.setPower(intakePower);
         transferMotor.setPower(transferPower);
         transferPollenBlocker.setPosition(blockerPosition);
+    }
+
+    // -------------- DIRECT CONTROL METHODS --------------
+
+    /** Intake + transfer. Stops the transfer once its current shows it's full (checked every stallCheckEveryLoops calls). */
+    public void runIntake() {
+        stallCheckCount = (stallCheckCount + 1) % stallCheckEveryLoops;
+        if (!transferFull && stallCheckCount == 0
+                && transferMotor.getCurrent(CurrentUnit.MILLIAMPS) > transferStallMilliamps) {
+            transferFull = true;
+        }
+        setRollers(directIntakePower, transferFull ? 0 : directIntakeTransferPower);
+    }
+
+    /** Shooting: feed everything into the flywheel, no stall check (the transfer is emptying). */
+    public void runFeed() {
+        transferFull = false;
+        setRollers(directIntakePower, directFeedTransferPower);
+    }
+
+    /** Push everything back out. */
+    public void runOuttake() {
+        transferFull = false;
+        setRollers(directOuttakePower, directOuttakePower);
+    }
+
+    /** Intake and transfer off (keeps the "transfer full" flag). */
+    public void stopRollers() {
+        setRollers(dormant, dormant);
+    }
+
+    public void setGateOpen(boolean open) {
+        blockerPosition = open ? blockerOpen : blockerClosed;
+        transferPollenBlocker.setPosition(blockerPosition);
+    }
+
+    public void setFlowerWedgeDown(boolean down) {
+        flowerWedgeIsDown = down;
+        if (flowerWedgeEnabled) setFlowerWedge(flowerWedgeLeft, flowerWedgeRight, down);
+    }
+
+    public boolean isTransferFull() {
+        return transferFull;
+    }
+
+    private void setRollers(double intakePower, double transferPower) {
+        this.intakePower = intakePower;
+        this.transferPower = transferPower;
+        intake.setPower(intakePower);
+        transferMotor.setPower(transferPower);
     }
 
     /** Returns whether the wedge should be down, toggled with the left bumper. */

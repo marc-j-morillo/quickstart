@@ -41,15 +41,21 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
   nearest limit in the dead zone. Output smoothing (`smoothingTimeMs`), `rightServoEnabled`, output on/off.
 - `teleop/systems/utils/GoalTargets.java`: red goal points (RIGHT / LEFT side), relocalize pose. Blue mirrors red:
   x -> 141.5 - x, heading -> 180 - heading.
-- `teleop/systems/Intake.java`: intake/transfer and the flower wedge (enabled; per-servo `left/rightWedgeUp/Down`,
-  `Intake.setFlowerWedge`).
-- `teleop/CompetitionTeleop.java` (+ `RedTeleop`, `BlueTeleop`): competition teleop. FSM INTAKING / IDLING / SHOOTING,
-  controls listed in the class comment. Uses its own Pinpoint + mecanum code, not Pedro's follower.
+- `teleop/systems/Drive.java`: the one Pedro follower (drivetrain + Pinpoint localizer from `pedro/Constants`).
+  `drive(gamepad)` = field-centric teleop drive + follower update + `FollowerPose`; relocalize helpers
+  (`setPose`, `setPosition`, `setHeading`, `resetHeading`, `relocalize`). Autos get it via `Robot.getFollower()`.
+  Pedro `DrivePowers` are (forward, strafe + = left, turn + = counterclockwise), so stick x axes are negated.
+- `teleop/systems/Intake.java`: intake/transfer, gate, flower wedge (per-servo `left/rightWedgeUp/Down`).
+  `update(...)` runs the Robot transport FSM (autos); `runIntake` / `runFeed` / `runOuttake` / `stopRollers` /
+  `setGateOpen` / `setFlowerWedgeDown` are direct control for the competition teleop (with the transfer stall check).
+- `teleop/CompetitionTeleop.java` (+ `RedTeleop`, `BlueTeleop`): competition teleop built on Drive / Intake /
+  Shooter / BatteryVoltage. FSM INTAKING / IDLING / SHOOTING, controls listed in the class comment.
 - Test opmodes: `ActuallyEverythingLutTest` (real Shooter + LUTs), `ActuallyEverythingManualTest` (manual flywheel/hood),
   `LutTuner`, `TurretHeadingHold`, `TurretServoTuner`, `teleop/hardwaretests/*` (no subsystems: motor directions,
   turret, flower wedge, shooter motors).
 - `teleop/systems/utils/`: `FollowerPose` (static pose; `takeStartPose()` uses the auto's end pose once),
-  `BulkReads` (manual bulk caching), `LoopTimer`.
+  `BulkReads` (manual bulk caching), `BatteryVoltage` (throttled voltage + feedforward multiplier), `LoopTimer`.
+- The LUT test and ManualTest still use their own raw Pinpoint + mecanum code (with different pod offsets than Pedro's).
 - `pedro/Constants.java`: Pedro config, including tuned Foresight braking coefficients. Autos are in `pedro/auto/`.
 
 ## Conventions

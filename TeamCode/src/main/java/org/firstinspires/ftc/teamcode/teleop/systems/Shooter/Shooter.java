@@ -201,6 +201,16 @@ public class Shooter {
         runController(targetVelocity, p, f, voltageMultiplier);
     }
 
+    /**
+     * Competition-teleop flywheel: always at the LUT speed so it's ready to shoot. While shooting, P comes from the
+     * per-distance shooting kP table (if config().useShootingKpLut), otherwise config().shooterP.
+     */
+    public void runLutFlywheel(boolean shooting, double voltageMultiplier) {
+        ShooterConfig c = config();
+        double p = shooting && c.useShootingKpLut ? lutShootingKp : c.shooterP;
+        runFlywheel(lutTargetVelocity(), p, voltageMultiplier);
+    }
+
     /** The LUT shooting speed (ticks/s) for the current distance, with velocityTrim, rounding and the rpm offset. */
     public double lutTargetVelocity() {
         return calcVelocity(true);

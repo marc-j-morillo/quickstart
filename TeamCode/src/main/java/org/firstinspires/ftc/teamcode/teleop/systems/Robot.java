@@ -25,6 +25,7 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 
 import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.BatteryVoltage;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 
@@ -40,14 +41,12 @@ public class Robot {
     Drive drive;
     Intake intake;
 
-    public VoltageSensor voltageSensor;
-    public double voltage;
-    public static double nominalVoltage = 14.0;
+    public BatteryVoltage battery;
     public double voltageMultiplier;
+    public static double nominalVoltage = 14.0;
     // The voltage sensor isn't in the bulk read (each read is its own ~1-2 ms command) and battery voltage
-    // changes slowly, so only read it this often
+    // changes slowly, so BatteryVoltage only reads it this often
     public static double voltageReadIntervalMs = 250;
-    private final ElapsedTime voltageTimer = new ElapsedTime();
 
     public static double triggerThreshold = 0.2;
 
@@ -70,7 +69,8 @@ public class Robot {
 
 
     public Robot(HardwareMap hardwareMap) {
-        voltageSensor =  hardwareMap.voltageSensor.iterator().next();
+        battery = new BatteryVoltage(hardwareMap);
+        voltageMultiplier = battery.multiplier();
         shooter = new Shooter(hardwareMap);
         drive = new Drive(hardwareMap, true);
         intake = new Intake(hardwareMap);
@@ -79,18 +79,10 @@ public class Robot {
         allHubs = BulkReads.enableManual(hardwareMap);
         CtrlHub = allHubs.get(0);
         ExpHub = allHubs.get(1);
-
-        readVoltage();
-    }
-
-    private void readVoltage() {
-        voltage = voltageSensor.getVoltage();
-        voltageMultiplier = nominalVoltage / voltage;
-        voltageTimer.reset();
     }
 
     private void updateVoltage() {
-        if (voltageTimer.milliseconds() >= voltageReadIntervalMs) readVoltage();
+        voltageMultiplier = battery.multiplier(); // only re-reads the sensor every voltageReadIntervalMs
     }
 
 

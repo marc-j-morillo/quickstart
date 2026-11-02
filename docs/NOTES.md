@@ -5,7 +5,8 @@ Update the "Current state", "Open issues" and "Next up" sections at the end of e
 line to the log at the bottom.
 
 ## Current state (2026-11-02)
-- Competition teleops: `RedTeleop` / `BlueTeleop` (`CompetitionTeleop`).
+- Competition teleops: `RedTeleop` / `BlueTeleop` (`CompetitionTeleop`), now built on the subsystems: Drive (Pedro
+  follower for driving + localization), Intake (direct-control methods), Shooter (`runLutFlywheel`), BatteryVoltage.
   - gamepad1: drive (field-centric), right trigger intake / shoot, left trigger outtake, right bumper holds the gate
     open (rumbles), x / b pick the LEFT / RIGHT goal, dpad down = heading reset, dpad up = relocalize to the goal point.
   - gamepad2: start = relocalize pose, bumpers = rpm offset +/-10, dpad left/right = turret offset 3 deg,
@@ -17,6 +18,12 @@ line to the log at the bottom.
 - Flower wedge enabled everywhere; per-servo up/down positions are in `Intake`.
 
 ## Open issues
+- Competition teleop on the Pedro follower: driving checked on the robot and fine (as is the LUT test).
+  Still to check: the relocalize buttons, and that the pose and aiming match the old teleop.
+- Pinpoint pod offsets differ: Pedro `Constants` (used by Drive and autos) has 2.845 / -6.321 in, the LUT test and
+  ManualTest have 2.362 / -4.508 in. Decide which is right and use it everywhere.
+- `Drive.update(gamepad)` (Robot-based teleops: testCode, LutTuner, ActuallyEverythingTest) now negates the stick
+  strafe/turn for Pedro's convention; before, strafe and turn were likely reversed there. Verify on the robot.
 - `RedTeleop` sometimes ends on its own with no error. Not a code stop (nothing calls requestOpModeStop).
   Suspects: brief Wi-Fi drop (RC stops the opmode on lost heartbeat), Driver Station timer, Panels/Dashboard
   sending stop. Check `robotControllerLog.txt` around the stop.
@@ -51,3 +58,5 @@ Plan discussed, waiting on the user's answers:
 ## Log
 - 2026-11-02: Shooter settings moved to `config/` (CRShooter / UnderShooter, selectable in Panels); flower wedge
   per-servo positions; competition teleop FSM, kP table, gamepad2 controls; turret smoothing; CLAUDE.md and these notes added.
+- 2026-11-02: Competition teleop moved onto the Pedro follower and subsystems (Drive rewrite, Intake direct control,
+  Shooter.runLutFlywheel, BatteryVoltage util shared with Robot). Driving checked on the robot.
