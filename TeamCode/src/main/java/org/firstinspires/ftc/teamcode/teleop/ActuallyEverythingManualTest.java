@@ -251,7 +251,7 @@ public class ActuallyEverythingManualTest extends OpMode {
 
         turret = new TurretPollen(hardwareMap);
 
-        shooterController = new PIDFController(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.kV);
+        shooterController = new PIDFController(Shooter.config().shooterP, Shooter.config().shooterI, Shooter.config().shooterD, Shooter.config().kV);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
     }
 
@@ -366,8 +366,8 @@ public class ActuallyEverythingManualTest extends OpMode {
         double voltageMultiplier = Robot.nominalVoltage / voltage;
 
         flywheelActual = flywheel.getVelocity();
-        shooterController.setPIDF(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.kV * voltageMultiplier);
-        shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * Shooter.kS * voltageMultiplier);
+        shooterController.setPIDF(Shooter.config().shooterP, Shooter.config().shooterI, Shooter.config().shooterD, Shooter.config().kV * voltageMultiplier);
+        shooterpid = shooterController.calculate(flywheelActual, flywheelTarget) + (Math.signum(flywheelTarget) * Shooter.config().kS * voltageMultiplier);
         flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
 
         hood.update(Range.clip(hoodPosition, hoodMin, hoodMax));

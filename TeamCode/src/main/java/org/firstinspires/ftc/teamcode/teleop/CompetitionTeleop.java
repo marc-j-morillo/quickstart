@@ -33,10 +33,10 @@ import java.util.List;
  *
  * States (picked from gamepad1 every loop):
  *   SHOOTING .. gate open (right bumper held) AND right trigger: intake + transfer feed at shootTransferPower,
- *               no transfer stall check, flywheel P from Shooter.lutShootingKps (by distance), or
- *               Shooter.shooterP if Shooter.useShootingKpLut is false
- *   INTAKING .. right trigger (gate closed): intake + transfer with the stall check, flywheel P = Shooter.shooterP
- *   IDLING .... anything else (just driving): left trigger outtakes, flywheel P = Shooter.shooterP
+ *               no transfer stall check, flywheel P from Shooter.config().lutShootingKps (by distance), or
+ *               Shooter.config().shooterP if Shooter.config().useShootingKpLut is false
+ *   INTAKING .. right trigger (gate closed): intake + transfer with the stall check, flywheel P = Shooter.config().shooterP
+ *   IDLING .... anything else (just driving): left trigger outtakes, flywheel P = Shooter.config().shooterP
  *   The flywheel's I, D, kV and kS are Shooter's in every state.
  *
  * gamepad1 (driver):
@@ -254,7 +254,7 @@ public abstract class CompetitionTeleop extends OpMode {
                 intake = intakeShootPower;
                 transfer = shootTransferPower;
                 transferFull = false;
-                double shootingP = Shooter.useShootingKpLut ? Shooter.lutShootingKp : Shooter.shooterP;
+                double shootingP = Shooter.config().useShootingKpLut ? Shooter.lutShootingKp : Shooter.config().shooterP;
                 shooter.runFlywheel(flywheelTarget, shootingP, voltageMultiplier);
                 break;
 
@@ -266,7 +266,7 @@ public abstract class CompetitionTeleop extends OpMode {
                 }
                 intake = intakePower;
                 transfer = transferFull ? 0 : intakeTransferPower;
-                shooter.runFlywheel(flywheelTarget, Shooter.shooterP, voltageMultiplier);
+                shooter.runFlywheel(flywheelTarget, Shooter.config().shooterP, voltageMultiplier);
                 break;
 
             case IDLING:
@@ -275,7 +275,7 @@ public abstract class CompetitionTeleop extends OpMode {
                 intake = outtaking ? outtakePower : 0;
                 transfer = outtaking ? outtakePower : 0;
                 if (outtaking) transferFull = false; // balls pushed back out
-                shooter.runFlywheel(flywheelTarget, Shooter.shooterP, voltageMultiplier);
+                shooter.runFlywheel(flywheelTarget, Shooter.config().shooterP, voltageMultiplier);
                 break;
         }
         intakeMotor.setPower(intake);

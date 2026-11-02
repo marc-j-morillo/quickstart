@@ -13,6 +13,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.controller.PIDFController;
 
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.config.CRShooter;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.config.ShooterConfig;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.config.UnderShooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 
 
@@ -42,12 +45,21 @@ public class Shooter {
     @IgnoreConfigurable public static double turretTargetPositionPollen;  // servo position actually commanded
     @IgnoreConfigurable public static double turretTargetPositionNectar;
 
-    // Offsets from odometry center to turret center, in inches, in the robot frame:
-    // X = forward, Y = left. Measure these on the robot, for now they are set to 0
-    public static double turretPollenXOffset = 0.0;
-    public static double turretPollenYOffset = 0.0;
-    public static double turretNectarXOffset = 0.0;
-    public static double turretNectarYOffset = 0.0;
+    // -------------- Settings --------------
+    // Every tunable setting lives in the config folder: ShooterConfig lists them, and CRShooter / UnderShooter each
+    // hold a full set of values. activeConfig (Panels, under Shooter) picks the set the Shooter uses; switching it
+    // applies on the next update. Read the active set in code with Shooter.config().
+    public enum Config { CR_SHOOTER, UNDER_SHOOTER }
+    public static Config activeConfig = Config.CR_SHOOTER;
+
+    /** The settings the Shooter is using right now (the set picked by activeConfig). */
+    public static ShooterConfig config() {
+        switch (activeConfig) {
+            case UNDER_SHOOTER: return UnderShooter.values;
+            case CR_SHOOTER:
+            default: return CRShooter.values;
+        }
+    }
 
     // -------------- Goal --------------
     // The goal points (RIGHT / LEFT, red tuned, blue mirrored) live in GoalTargets.
@@ -70,9 +82,9 @@ public class Shooter {
 
     // Optional aim-point override (used by the test opmodes). When enabled, turret aim, hood angle and
     // flywheel velocity all use this field point (inches, same frame as botX/botY) instead of the goal.
-    public static boolean useTargetOverride = false;
-    public static double targetOverrideX = 70.75;
-    public static double targetOverrideY = 70.75;
+    @IgnoreConfigurable public static boolean useTargetOverride = false;
+    @IgnoreConfigurable public static double targetOverrideX = 70.75;
+    @IgnoreConfigurable public static double targetOverrideY = 70.75;
 
 
     // FLYWHEEL CLASS AND VARIABLES
@@ -83,7 +95,6 @@ public class Shooter {
     //Shooter PID (gains are zeroed while driving or when the target is 0)
     private PIDFController shooterController;
 
-    public static double shooterP = .002654, shooterI = 0, shooterD = 0, kV = .000325, kS = .032;
     public double shooterpid;
 
     //MOTOR VELOCITY
@@ -93,81 +104,7 @@ public class Shooter {
     @IgnoreConfigurable public static double shooterVelocityTarget;
 
     @IgnoreConfigurable public static double fireTolerance = 40;
-    public static double notShootingTolerance = 50;
-    public static double poweringTolerance = 40;
-    public static double shootingTolerance = 150;
 
-    // Velocity target changes
-    public static double velocityRounding = 10;   // round the LUT velocity to the nearest this many ticks/s
-    // When not shooting (HOME / INTAKE / OUTTAKE) in teleop, the flywheel idles at this speed instead of the LUT speed.
-    // Autos always use the LUT speed so the flywheel is ready for each shot.
-    // In ticks/s, the same units as the LUT velocities and the "Flywheel target" telemetry.
-    public static double idleVelocity = 1600;
-    public static double flywheelTicksPerRev = 28; // flywheel motor encoder ticks per revolution (goBILDA bare motor)
-
-    // -------------- Shot table --------------
-    // Editable live from Panels: Shooter rebuilds the LUTs on its next update whenever these change.
-    // Each index is one shot: at lutDistances[i] inches, spin to lutVelocities[i] and set the hood to lutHoods[i].
-    // A distance <= 0 marks an empty slot. Find the points with LutTuner.
-    // Only slots that exist in ALL three arrays are used, so keep them the same length.
-    // The comments are just labels: if you change a distance, update the comments to match.
-    public static double[] lutDistances  = {
-            0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
-    };
-    public static double[] lutVelocities = {
-            1660, //  0 in (empty slot, ignored)
-            1660, // 20 in
-            1660, // 25 in
-            1660, // 30 in
-            1680, // 35 in
-            1680, // 40 in
-            1700, // 45 in
-            1725, // 50 in
-            1750, // 55 in
-            1765, // 60 in
-            1780, // 65 in
-            1790 // 70 in
-    };
-    public static double[] lutHoods      = {
-            0, //  0 in (empty slot, ignored)
-            0, // 20 in
-            0.05, // 25 in
-            0.075, // 30 in
-            0.15, // 35 in
-            0.18, // 40 in
-            0.22, // 45 in
-            0.25, // 50 in
-            0.275, // 55 in
-            0.3, // 60 in
-            0.325, // 65 in
-            0.35, // 70 in
-    };
-
-
-
-    // Flywheel kP while SHOOTING in the competition teleops, by distance (same distances as lutDistances).
-    // Balls hitting the flywheel pull its speed down, so a different P can recover faster. Starts at shooterP everywhere.
-    // Has its own slot count, so it can be shorter than lutDistances without dropping velocity/hood points.
-    // useShootingKpLut = false: SHOOTING uses plain shooterP like the other states, and this table is ignored.
-    public static boolean useShootingKpLut = true;
-    public static double[] lutShootingKps = {
-            0.00265, //  0 in (empty slot, ignored)
-            0.00265, // 20 in
-            0.00265, // 25 in
-            0.00265, // 30 in
-            0.00265, // 35 in
-            0.00265, // 40 in
-            0.00265, // 45 in
-            0.00265, // 50 in
-            0.00265, // 55 in
-            0.00265, // 60 in
-            0.00265, // 65 in
-            0.00265, // 70 in
-    };
-
-    // Added on top of the LUT output (LutTuner adjusts these, then bakes them into a new point)
-    public static double velocityTrim = 0;
-    public static double hoodTrim = 0;
 
     // SafeLut never throws and clamps the lookup distance to the table's range (see SafeLut at the bottom).
     public SafeLut velocityLut = new SafeLut();
@@ -186,7 +123,7 @@ public class Shooter {
         //turretNectar = new TurretNectar(hardwareMap);
         flywheel = new Flywheel(hardwareMap);
         hoodPollen = new HoodPollen(hardwareMap);
-        shooterController = new PIDFController(shooterP, shooterI, shooterD, kV);
+        shooterController = new PIDFController(config().shooterP, config().shooterI, config().shooterD, config().kV);
 
         shooterVelocity = dormant;
         shooterVelocityTarget = dormant;
@@ -204,29 +141,29 @@ public class Shooter {
         switch (Robot.transportState) {
             case HOME:
                 shooterVelocityTarget = calcVelocity(false);
-                fireTolerance = notShootingTolerance;
+                fireTolerance = config().notShootingTolerance;
                 break;
             case INTAKE:
                 shooterVelocityTarget = calcVelocity(false);
-                fireTolerance = notShootingTolerance;
+                fireTolerance = config().notShootingTolerance;
                 break;
             case OUTTAKE:
                 shooterVelocityTarget = calcVelocity(false);
-                fireTolerance = notShootingTolerance;
+                fireTolerance = config().notShootingTolerance;
                 break;
             case POWER_SHOOTER:
                 shooterVelocityTarget = calcVelocity(true);
-                fireTolerance = poweringTolerance;
+                fireTolerance = config().poweringTolerance;
                 break;
             case SHOOT:
                 shooterVelocityTarget = calcVelocity(true);
-                fireTolerance = shootingTolerance;
+                fireTolerance = config().shootingTolerance;
                 break;
         }
 
         boolean idle = shooterVelocityTarget == 0 || isDriving;
-        double p = idle ? 0 : shooterP;
-        double f = idle ? 0 : kV * voltageMultiplier;
+        double p = idle ? 0 : config().shooterP;
+        double f = idle ? 0 : config().kV * voltageMultiplier;
         runController(shooterVelocityTarget, p, f, voltageMultiplier);
     }
 
@@ -251,7 +188,7 @@ public class Shooter {
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
 
-        hoodPollenPosition = HoodPollen.clamp(lutHood + hoodTrim);
+        hoodPollenPosition = HoodPollen.clamp(lutHood + config().hoodTrim);
         hoodPollen.update(hoodPollenPosition);
     }
 
@@ -260,7 +197,7 @@ public class Shooter {
      * kV and kS are scaled by voltageMultiplier. A target of 0 turns the flywheel off.
      */
     public void runFlywheel(double targetVelocity, double p, double voltageMultiplier) {
-        double f = targetVelocity == 0 ? 0 : kV * voltageMultiplier;
+        double f = targetVelocity == 0 ? 0 : config().kV * voltageMultiplier;
         runController(targetVelocity, p, f, voltageMultiplier);
     }
 
@@ -272,8 +209,8 @@ public class Shooter {
     private void runController(double targetVelocity, double p, double f, double voltageMultiplier) {
         shooterVelocityTarget = targetVelocity;
         shooterVelocity = flywheel.getVelocity();
-        shooterController.setPIDF(p, shooterI, shooterD, f);
-        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * kS * voltageMultiplier);
+        shooterController.setPIDF(p, config().shooterI, config().shooterD, f);
+        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) + (Math.signum(shooterVelocityTarget) * config().kS * voltageMultiplier);
         flywheel.update(Range.clip(shooterpid, -1.0, 1.0));
     }
 
@@ -282,8 +219,8 @@ public class Shooter {
 
     /** Field position of the turret: odometry center plus the turret offset rotated by the heading. */
     private void updateShooterPosition(boolean isPollen) {
-        double xOffset = isPollen ? turretPollenXOffset : turretNectarXOffset;
-        double yOffset = isPollen ? turretPollenYOffset : turretNectarYOffset;
+        double xOffset = isPollen ? config().turretPollenXOffset : config().turretNectarXOffset;
+        double yOffset = isPollen ? config().turretPollenYOffset : config().turretNectarYOffset;
         double heading = Math.toRadians(botHeading);
 
         shooterX = botX + xOffset * Math.cos(heading) - yOffset * Math.sin(heading);
@@ -303,14 +240,10 @@ public class Shooter {
 
     // -------------------------------- TURRET METHODS ---------------------------------
 
-    // The wrap goes to (-180 + turretWrapBias, 180 + turretWrapBias], so a target straight behind the robot
-    // always resolves to the + side instead of flipping between +180 and -180 with localizer noise.
-    public static double turretWrapBias = 10;
-
-    /** Wraps a turret angle to one turn, biased by turretWrapBias. */
+    /** Wraps a turret angle to one turn, biased by config().turretWrapBias (see ShooterConfig). */
     public static double angleWrap(double degrees) {
-        while (degrees > 180 + turretWrapBias)  degrees -= 360;
-        while (degrees <= -180 + turretWrapBias) degrees += 360;
+        while (degrees > 180 + config().turretWrapBias)  degrees -= 360;
+        while (degrees <= -180 + config().turretWrapBias) degrees += 360;
         return degrees;
     }
 
@@ -345,59 +278,62 @@ public class Shooter {
     /** Flywheel target in ticks/s: the LUT speed when shooting (or in auto), otherwise idleVelocity. */
     private double calcVelocity(boolean isShooting) {
         if (!isShooting && !inAuto) {
-            return idleVelocity;
+            return config().idleVelocity;
         }
 
         // Lookup Velocity & Round to Nearest velocityRounding
-        double rawVelocity = lutVelocity + velocityTrim;
-        double rounded = velocityRounding > 0
-                ? Math.round(rawVelocity / velocityRounding) * velocityRounding
+        double rawVelocity = lutVelocity + config().velocityTrim;
+        double rounded = config().velocityRounding > 0
+                ? Math.round(rawVelocity / config().velocityRounding) * config().velocityRounding
                 : rawVelocity;
         // The driver offset goes on after rounding, so every 15 rpm step actually changes the target
         return rounded + rpmToTicksPerSecond(velocityOffsetRpm);
     }
 
     public static double rpmToTicksPerSecond(double rpm) {
-        return rpm * flywheelTicksPerRev / 60.0;
+        return rpm * config().flywheelTicksPerRev / 60.0;
     }
 
     // -------------------------------- SHOT TABLE ---------------------------------
 
     /** Rebuilds velocityLut / hoodAngleLut / shootingKpLut from the lut arrays if any of them changed since the last build. */
     public void rebuildLutsIfChanged() {
-        if (Arrays.equals(lutDistances, builtDistances)
-                && Arrays.equals(lutVelocities, builtVelocities)
-                && Arrays.equals(lutHoods, builtHoods)
-                && Arrays.equals(lutShootingKps, builtShootingKps)) {
+        // Read the active config once, so switching configs mid-rebuild can't mix two configs' tables.
+        // Switching configs changes the arrays, so the tables rebuild automatically.
+        ShooterConfig c = config();
+        if (Arrays.equals(c.lutDistances, builtDistances)
+                && Arrays.equals(c.lutVelocities, builtVelocities)
+                && Arrays.equals(c.lutHoods, builtHoods)
+                && Arrays.equals(c.lutShootingKps, builtShootingKps)) {
             return;
         }
 
         SafeLut kps = new SafeLut();
-        int kpPoints = Math.min(lutDistances.length, lutShootingKps.length);
+        int kpPoints = Math.min(c.lutDistances.length, c.lutShootingKps.length);
         for (int i = 0; i < kpPoints; i++) {
-            if (lutDistances[i] <= 0) continue; // empty slot
-            kps.add(lutDistances[i], lutShootingKps[i]);
+            if (c.lutDistances[i] <= 0) continue; // empty slot
+            kps.add(c.lutDistances[i], c.lutShootingKps[i]);
         }
         kps.createLUT();
         shootingKpLut = kps;
-        builtShootingKps = lutShootingKps.clone();
+        builtShootingKps = c.lutShootingKps.clone();
 
         SafeLut velocities = new SafeLut();
         SafeLut hoods = new SafeLut();
-        int points = Math.min(lutDistances.length, Math.min(lutVelocities.length, lutHoods.length));
+        int points = Math.min(c.lutDistances.length, Math.min(c.lutVelocities.length, c.lutHoods.length));
         for (int i = 0; i < points; i++) {
-            if (lutDistances[i] <= 0) continue; // empty slot
-            velocities.add(lutDistances[i], lutVelocities[i]);
-            hoods.add(lutDistances[i], lutHoods[i]);
+            if (c.lutDistances[i] <= 0) continue; // empty slot
+            velocities.add(c.lutDistances[i], c.lutVelocities[i]);
+            hoods.add(c.lutDistances[i], c.lutHoods[i]);
         }
         velocities.createLUT();
         hoods.createLUT();
         velocityLut = velocities;
         hoodAngleLut = hoods;
 
-        builtDistances = lutDistances.clone();
-        builtVelocities = lutVelocities.clone();
-        builtHoods = lutHoods.clone();
+        builtDistances = c.lutDistances.clone();
+        builtVelocities = c.lutVelocities.clone();
+        builtHoods = c.lutHoods.clone();
     }
 
     // -------------------------------- SAFE LUT ---------------------------------

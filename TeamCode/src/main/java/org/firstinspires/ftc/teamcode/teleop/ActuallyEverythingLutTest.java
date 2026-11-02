@@ -63,7 +63,7 @@ import java.util.List;
  * Notes:
  *   - Shooter.update zeroes the flywheel P and kV terms while isDriving is true, so the flywheel
  *     only spins up when the drive sticks are released.
- *   - Without the bumper the Shooter idles the flywheel at Shooter.idleVelocity (that is how the real
+ *   - Without the bumper the Shooter idles the flywheel at Shooter.config().idleVelocity (that is how the real
  *     robot behaves); the bumper spins it up to the LUT speed.
  */
 @TeleOp(name = "ActuallyEverythingLutTest", group = "TeleOp")
