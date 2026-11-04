@@ -84,8 +84,8 @@ public class TurretPollen {
      * The turret only swings across once the target is reachable again on the other side.
      */
     public void aimAt(double degrees) {
-        double lo = Math.min(positionToAngle(minPosition), positionToAngle(maxPosition));
-        double hi = Math.max(positionToAngle(minPosition), positionToAngle(maxPosition));
+        double lo = Math.min(positionToAngle(lowestPosition()), positionToAngle(highestPosition()));
+        double hi = Math.max(positionToAngle(lowestPosition()), positionToAngle(highestPosition()));
         double current = getCommandedAngle();
         double wrapped = ((degrees % 360) + 540) % 360 - 180; // -180..180
 
@@ -105,7 +105,7 @@ public class TurretPollen {
      * moves smoothly toward the target (see smoothingTimeMs). The first call goes straight to the target.
      */
     public void update(double turretTargetPosition) {
-        double target = Range.clip(turretTargetPosition, Math.min(minPosition, maxPosition), Math.max(minPosition, maxPosition));
+        double target = Range.clip(turretTargetPosition, lowestPosition(), highestPosition());
 
         long now = System.nanoTime();
         double output = target;
@@ -118,6 +118,23 @@ public class TurretPollen {
         lastUpdateNanos = now;
 
         setRawPosition(output);
+    }
+
+    /**
+     * Lowest / highest position the turret may be commanded to: the travel limits, narrowed so that position + trim
+     * stays inside 0..1 for every powered servo. Otherwise a trimmed servo stops at 0 or 1 while the other keeps
+     * going, and the two fight at that end of travel only.
+     */
+    private static double lowestPosition() {
+        double low = Math.max(Math.min(minPosition, maxPosition), -leftTrim);
+        if (rightServoEnabled) low = Math.max(low, -rightTrim);
+        return low;
+    }
+
+    private static double highestPosition() {
+        double high = Math.min(Math.max(minPosition, maxPosition), 1 - leftTrim);
+        if (rightServoEnabled) high = Math.min(high, 1 - rightTrim);
+        return high;
     }
 
     /** Sets the servo position right away, ignoring the travel limits and smoothing (only clipped to 0..1). For tuning. */

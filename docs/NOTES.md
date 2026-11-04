@@ -29,6 +29,11 @@ line to the log at the bottom.
   sending stop. Check `robotControllerLog.txt` around the stop.
 - `UnderShooter` speeds (2988-3222, idle 2880 ticks/s) are above a bare goBILDA motor's ~2800 ticks/s free speed,
   and 5800 rpm output is about 2710 ticks/s at the encoder. Needs real numbers (and probably kV, ticksPerRev).
+- Turret misbehaves in one turning direction only (ActuallyEverythingLutTest). The aim/wrap math simulates as an
+  exact mirror both ways, so suspect hardware/calibration: `TurretPollen.minPosition/maxPosition` are still 0 / 1
+  (full +/-172.5 deg, TurretServoTuner step 1 never copied in), so one side may drive into a hard stop or cable.
+  Trim fight fixed in code (2026-11-03, untested on robot): the travel limits now shrink so position + trim stays
+  in 0..1 for both servos, e.g. rightTrim +0.03 caps the turret at 0.97 (about 10 deg less on that side).
 - Placeholders still to tune: flower wedge up/down positions (0.5 / 0), turret offset from robot center (0, 0).
 - Check blue's LEFT/RIGHT goal labels on the robot (mirroring may swap them from the blue driver's view).
 - Driver-2 rpm offset converts with motor rpm, so with the 2:1 reduction each 10 rpm step is ~5 rpm at the wheel
@@ -60,3 +65,5 @@ Plan discussed, waiting on the user's answers:
   per-servo positions; competition teleop FSM, kP table, gamepad2 controls; turret smoothing; CLAUDE.md and these notes added.
 - 2026-11-02: Competition teleop moved onto the Pedro follower and subsystems (Drive rewrite, Intake direct control,
   Shooter.runLutFlywheel, BatteryVoltage util shared with Robot). Driving checked on the robot.
+- 2026-11-03: Checked the turret wrap in both turning directions (simulated, symmetric). TurretPollen travel limits
+  now leave room for leftTrim / rightTrim so the two servos can't fight at one end.
