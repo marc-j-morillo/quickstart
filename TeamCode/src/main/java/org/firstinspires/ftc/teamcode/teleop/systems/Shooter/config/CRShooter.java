@@ -12,7 +12,7 @@ import com.bylazar.configurables.annotations.Configurable;
  *   - CR 1:1 tangential velocity
  *   - 2900 rpm final output
  *   - two motors
- *   - one goBILDA weight, switching to two
+ *   - two goBILDA weights
  */
 @Configurable
 public class CRShooter {
@@ -48,48 +48,48 @@ public class CRShooter {
                 0, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70
         };
         values.lutVelocities = new double[]{
-                1660, //  0 in (empty slot, ignored)
-                1660, // 20 in
-                1660, // 25 in
-                1660, // 30 in
-                1680, // 35 in
-                1680, // 40 in
-                1700, // 45 in
-                1725, // 50 in
-                1750, // 55 in
-                1765, // 60 in
-                1780, // 65 in
-                1790, // 70 in
+                1660, //  0 in (empty slot, ignored) - 0
+                1660, // 20 in - 1
+                1665, // 25 in - 2
+                1665, // 30 in - 3
+                1680, // 35 in - 4
+                1680, // 40 in - 5
+                1700, // 45 in - 6
+                1750, // 50 in - 7
+                1740, // 55 in - 8
+                1765, // 60 in - 9
+                1780, // 65 in - 10
+                1790, // 70 in - 11
         };
         values.lutHoods = new double[]{
-                0, //  0 in (empty slot, ignored)
-                0, // 20 in
-                0.05, // 25 in
-                0.075, // 30 in
-                0.15, // 35 in
-                0.18, // 40 in
-                0.22, // 45 in
-                0.25, // 50 in
-                0.275, // 55 in
-                0.3, // 60 in
-                0.325, // 65 in
-                0.35, // 70 in
+                0, //  0 in (empty slot, ignored) - 0
+                0, // 20 in - 1
+                0.05, // 25 in - 2
+                0.075, // 30 in - 3
+                0.15, // 35 in - 4
+                0.18, // 40 in - 5
+                0.22, // 45 in - 6
+                0.25, // 50 in - 7
+                0.275, // 55 in - 8
+                0.3, // 60 in - 9
+                0.325, // 65 in - 10
+                0.35, // 70 in - 11
         };
 
         values.useShootingKpLut = true;
         values.lutShootingKps = new double[]{
-                0.00265, //  0 in (empty slot, ignored)
-                0.00265, // 20 in
-                0.00265, // 25 in
-                0.00265, // 30 in
-                0.00265, // 35 in
-                0.00265, // 40 in
-                0.00265, // 45 in
-                0.00265, // 50 in
-                0.00265, // 55 in
-                0.00265, // 60 in
-                0.00265, // 65 in
-                0.00265, // 70 in
+                0.00265, //  0 in (empty slot, ignored) - 0
+                0.0026, // 20 in - 1
+                0.0027, // 25 in - 2
+                0.0027, // 30 in - 3
+                0.0027, // 35 in - 4
+                0.00275, // 40 in - 5
+                0.0027, // 45 in - 6
+                0.0029, // 50 in - 7
+                0.00285, // 55 in - 8
+                0.00285, // 60 in - 9
+                0.0029, // 65 in - 10
+                0.0029, // 70 in - 11
         };
 
         values.velocityTrim = 0;
