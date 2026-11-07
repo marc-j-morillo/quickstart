@@ -54,7 +54,9 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
   `LutTuner`, `TurretHeadingHold`, `TurretServoTuner`, `teleop/hardwaretests/*` (no subsystems: motor directions,
   turret, flower wedge, shooter motors).
 - `teleop/systems/utils/`: `FollowerPose` (static pose; `takeStartPose()` uses the auto's end pose once),
-  `BulkReads` (manual bulk caching), `BatteryVoltage` (throttled voltage + feedforward multiplier), `LoopTimer`.
+  `BulkReads` (manual bulk caching), `BatteryVoltage` (throttled voltage + feedforward multiplier), `LoopTimer`,
+  `StaticDefaults` (records every TeamCode static at app start via `@OnCreate`; `resetAll()` puts them back).
+- `teleop/ResetStaticValues`: "Reset Static Values" opmode, resets all TeamCode statics on INIT (uses `StaticDefaults`).
 - The LUT test and ManualTest still use their own raw Pinpoint + mecanum code (with different pod offsets than Pedro's).
 - `pedro/Constants.java`: Pedro config, including tuned Foresight braking coefficients. Autos are in `pedro/auto/`.
 

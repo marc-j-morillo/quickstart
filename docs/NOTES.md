@@ -70,3 +70,6 @@ Plan discussed, waiting on the user's answers:
 - 2026-11-07: ShootPreload fired before the flywheel spun up: `Robot.update(Pose)` checked `inRange()` before
   `shooter.update()`, so the first loop compared 0 speed to a 0 target and jumped to SHOOT. Check moved after
   `shooter.update()`, and `inRange()` now returns false for a 0 target. Untested on the robot.
+- 2026-11-07: Added `ResetStaticValues` opmode + `StaticDefaults`: records every TeamCode static field (and the
+  contents of arrays / TeamCode objects like `CRShooter.values`) when the app starts, and puts them back on INIT.
+  Logic tested on the desktop with stubs; the `@OnCreate` hook and DexFile class listing are untested on the robot.
