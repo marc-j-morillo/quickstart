@@ -152,8 +152,8 @@ public abstract class CompetitionTeleop extends OpMode {
 
     private void updateControls() {
         // ----- gamepad1: goal side -----
-        if (gamepad1.xWasPressed()) GoalTargets.leftSide = true;
-        if (gamepad1.bWasPressed()) GoalTargets.leftSide = false;
+        if (gamepad1.xWasPressed() || gamepad2.xWasPressed()) GoalTargets.leftSide = true;
+        if (gamepad1.bWasPressed() || gamepad2.bWasPressed()) GoalTargets.leftSide = false;
 
         // ----- gamepad2: relocalization -----
         if (gamepad2.startWasPressed()) drive.relocalize();

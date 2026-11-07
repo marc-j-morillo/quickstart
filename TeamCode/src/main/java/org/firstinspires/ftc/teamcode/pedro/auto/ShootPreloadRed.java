@@ -68,9 +68,10 @@ public class ShootPreloadRed extends LinearOpMode {
         return sequential(
                 waitMs(1000),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+                waitMs(3000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
-                instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 follow(follower, park())
         );
     }

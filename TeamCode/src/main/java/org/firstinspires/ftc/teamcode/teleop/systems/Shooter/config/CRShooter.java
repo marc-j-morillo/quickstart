@@ -27,7 +27,7 @@ public class CRShooter {
         values.turretWrapBias = 10;
 
         // -------------- Flywheel PIDF --------------
-        values.shooterP = .002654;
+        values.shooterP = .00234;
         values.shooterI = 0;
         values.shooterD = 0;
         values.kV = .000325;

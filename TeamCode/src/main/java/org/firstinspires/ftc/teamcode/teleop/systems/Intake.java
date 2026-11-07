@@ -91,9 +91,9 @@ public class Intake {
     // -------------- Direct control (competition teleop) --------------
     // runIntake / runFeed / runOuttake / stopRollers / setGateOpen / setFlowerWedgeDown, called by the opmode's
     // own state machine instead of update(). Separate powers from the transport-state ones above, which autos use.
-    public static double directIntakePower = 1;
-    public static double directIntakeTransferPower = 0.7; // transfer while intaking (stops when it stalls)
-    public static double directFeedTransferPower = 1;     // transfer while shooting (no stall check)
+    public static double directIntakePower = .9;
+    public static double directIntakeTransferPower = .95; // transfer while intaking (stops when it stalls)
+    public static double directFeedTransferPower = .59;     // transfer while shooting (no stall check)
     public static double directOuttakePower = -1;
     public static double transferStallMilliamps = 5000;   // transfer current above this while intaking = it's full
     public static int stallCheckEveryLoops = 5;           // current isn't in the bulk read, so don't read it every loop
