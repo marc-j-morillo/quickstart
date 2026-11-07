@@ -9,5 +9,5 @@ public class GlobalVars {
 
     @IgnoreConfigurable public static boolean isRed = false;
 
-    public static int waitAfterShoot = 300; // Temp value for the amount of time it takes to shoot in auto
+    public static int waitAfterShoot = 1500; // Temp value for the amount of time it takes to shoot in auto
 }

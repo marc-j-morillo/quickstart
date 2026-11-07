@@ -35,7 +35,7 @@ public class ShootPreload extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
     private final Pose start = poseFactory.of(48, 7, 180);
-    private final Pose startAndShootPreload = poseFactory.of(87.4, 133.5, 90);
+    private final Pose startAndShootPreload = poseFactory.of(87.4, 133.5, -90);
     private final Pose intakeAllianceFlower = poseFactory.of(129.6765, 94.5, 0);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(116.3296, 94, 0);
     private final Pose shootLeft1 = poseFactory.of(94.3333, 26.5, -120);
