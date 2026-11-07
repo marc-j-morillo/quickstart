@@ -67,3 +67,6 @@ Plan discussed, waiting on the user's answers:
   Shooter.runLutFlywheel, BatteryVoltage util shared with Robot). Driving checked on the robot.
 - 2026-11-03: Checked the turret wrap in both turning directions (simulated, symmetric). TurretPollen travel limits
   now leave room for leftTrim / rightTrim so the two servos can't fight at one end.
+- 2026-11-07: ShootPreload fired before the flywheel spun up: `Robot.update(Pose)` checked `inRange()` before
+  `shooter.update()`, so the first loop compared 0 speed to a 0 target and jumped to SHOOT. Check moved after
+  `shooter.update()`, and `inRange()` now returns false for a 0 target. Untested on the robot.

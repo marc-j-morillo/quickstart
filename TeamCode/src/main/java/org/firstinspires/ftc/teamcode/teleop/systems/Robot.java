@@ -106,20 +106,19 @@ public class Robot {
     // AUTO UPDATE LOOP
     public void update(Pose currentPose) {
         BulkReads.clear(allHubs); // before any hardware read this loop
-        if (transportState == TransportState.POWER_SHOOTER) {
-            if (shooter.inRange()) {
-                transportState = TransportState.SHOOT;
-            }
-        }
-
         updateVoltage();
 
         FollowerPose.update(currentPose);
         shooter.update(voltageMultiplier, false);
+
+        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity.
+        // Checked after shooter.update() so it compares this loop's target and tolerance with this loop's
+        // measured speed. Before shooter.update() runs the first time both are still 0, which reads as "in range".
+        if (transportState == TransportState.POWER_SHOOTER && shooter.inRange()) {
+            transportState = TransportState.SHOOT;
+        }
+
         intake.update(flowerWedgeIsActive);
-
-        // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity
-
     }
 
     /** Current inputs for the controller (all are hold-to-run, nothing held = HOME):

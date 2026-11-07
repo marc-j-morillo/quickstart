@@ -278,7 +278,8 @@ public class Shooter {
 
 
     public boolean inRange() {
-        if (Math.abs(shooterVelocity - shooterVelocityTarget) < fireTolerance) {
+        // A target of 0 (flywheel off, or not set yet) is never "ready to fire"
+        if (shooterVelocityTarget > 0 && Math.abs(shooterVelocity - shooterVelocityTarget) < fireTolerance) {
             return true;
         } else {
             return false;
