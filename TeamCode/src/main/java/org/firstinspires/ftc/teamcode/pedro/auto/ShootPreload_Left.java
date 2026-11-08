@@ -121,6 +121,7 @@ public class ShootPreload_Left extends LinearOpMode {
             telemetry.update();
         }
         startPose = follower.pose();
+        Robot.transportState = Robot.TransportState.HOME;
     }
 
     public Path intakeAllianceFlower() {

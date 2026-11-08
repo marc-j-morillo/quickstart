@@ -67,12 +67,13 @@ public class ShootPreloadRed extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                instant(() -> Robot.transportState = Robot.TransportState.HOME),
                 waitMs(1000),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitMs(3000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
-                instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
+                instant(() -> Robot.transportState = Robot.TransportState.HOME),
                 follow(follower, park())
         );
     }
@@ -115,6 +116,7 @@ public class ShootPreloadRed extends LinearOpMode {
             telemetry.update();
         }
         startPose = follower.pose();
+        Robot.transportState = Robot.TransportState.HOME;
     }
 
     public Path intakeAllianceFlower() {

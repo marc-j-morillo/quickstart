@@ -71,7 +71,10 @@ public class RedSolo2Flower extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                waitMs(200),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+                waitMs(1000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
@@ -160,6 +163,7 @@ public class RedSolo2Flower extends LinearOpMode {
             telemetry.update();
         }
         startPose = follower.pose();
+        Robot.transportState = Robot.TransportState.HOME;
     }
 
     public Path intakeAllianceFlower() {
