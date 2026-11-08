@@ -52,6 +52,7 @@ public class ShooterConfig {
     // Ball time of flight in SECONDS, by distance (same distances as lutDistances, own slot count like the kP table):
     // from leaving the shooter to reaching the goal. Used by ShootOnTheMove to aim ahead of the robot's motion.
     // Measure with a slow-motion video: frames from leaving to reaching the goal / the video's fps.
+    // Only CRShooter's table is used (whichever config is active), so UnderShooter leaves this empty.
     // Empty = no ball-flight correction (the lead correction still runs).
     public double[] lutTimesOfFlight = new double[0];
 

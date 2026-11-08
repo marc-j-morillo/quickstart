@@ -111,7 +111,8 @@ public class Shooter {
     public SafeLut hoodAngleLut = new SafeLut();
     public SafeLut shootingKpLut = new SafeLut();
     public SafeLut timeOfFlightLut = new SafeLut();
-    private double[] builtDistances, builtVelocities, builtHoods, builtShootingKps, builtTimesOfFlight;
+    private double[] builtDistances, builtVelocities, builtHoods, builtShootingKps;
+    private double[] builtTofDistances, builtTimesOfFlight; // timeOfFlightLut always comes from CRShooter
 
     // Shoot on the move: aim point / turret position / heading corrected for the robot's motion (see ShootOnTheMove)
     private final ShootOnTheMove shootOnTheMove = new ShootOnTheMove();
@@ -316,30 +317,21 @@ public class Shooter {
     // -------------------------------- SHOT TABLE ---------------------------------
 
     /**
-     * Rebuilds velocityLut / hoodAngleLut / shootingKpLut / timeOfFlightLut from the lut arrays if any of them
-     * changed since the last build.
+     * Rebuilds velocityLut / hoodAngleLut / shootingKpLut from the active config's lut arrays, and timeOfFlightLut
+     * from CRShooter's, if any of them changed since the last build.
      */
     public void rebuildLutsIfChanged() {
+        rebuildTimeOfFlightLutIfChanged();
+
         // Read the active config once, so switching configs mid-rebuild can't mix two configs' tables.
         // Switching configs changes the arrays, so the tables rebuild automatically.
         ShooterConfig c = config();
         if (Arrays.equals(c.lutDistances, builtDistances)
                 && Arrays.equals(c.lutVelocities, builtVelocities)
                 && Arrays.equals(c.lutHoods, builtHoods)
-                && Arrays.equals(c.lutShootingKps, builtShootingKps)
-                && Arrays.equals(c.lutTimesOfFlight, builtTimesOfFlight)) {
+                && Arrays.equals(c.lutShootingKps, builtShootingKps)) {
             return;
         }
-
-        SafeLut times = new SafeLut();
-        int tofPoints = Math.min(c.lutDistances.length, c.lutTimesOfFlight.length);
-        for (int i = 0; i < tofPoints; i++) {
-            if (c.lutDistances[i] <= 0) continue; // empty slot
-            times.add(c.lutDistances[i], c.lutTimesOfFlight[i]);
-        }
-        times.createLUT();
-        timeOfFlightLut = times;
-        builtTimesOfFlight = c.lutTimesOfFlight.clone();
 
         SafeLut kps = new SafeLut();
         int kpPoints = Math.min(c.lutDistances.length, c.lutShootingKps.length);
@@ -367,6 +359,29 @@ public class Shooter {
         builtDistances = c.lutDistances.clone();
         builtVelocities = c.lutVelocities.clone();
         builtHoods = c.lutHoods.clone();
+    }
+
+    /**
+     * Rebuilds timeOfFlightLut (shoot on the move) if CRShooter's table changed. Always CRShooter's table, whichever
+     * config is active: it is the only one measured.
+     */
+    private void rebuildTimeOfFlightLutIfChanged() {
+        ShooterConfig cr = CRShooter.values;
+        if (Arrays.equals(cr.lutDistances, builtTofDistances)
+                && Arrays.equals(cr.lutTimesOfFlight, builtTimesOfFlight)) {
+            return;
+        }
+
+        SafeLut times = new SafeLut();
+        int points = Math.min(cr.lutDistances.length, cr.lutTimesOfFlight.length);
+        for (int i = 0; i < points; i++) {
+            if (cr.lutDistances[i] <= 0) continue; // empty slot
+            times.add(cr.lutDistances[i], cr.lutTimesOfFlight[i]);
+        }
+        times.createLUT();
+        timeOfFlightLut = times;
+        builtTofDistances = cr.lutDistances.clone();
+        builtTimesOfFlight = cr.lutTimesOfFlight.clone();
     }
 
     // -------------------------------- SAFE LUT ---------------------------------

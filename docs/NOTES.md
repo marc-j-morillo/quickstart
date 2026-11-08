@@ -51,7 +51,7 @@ For small motion while shooting (getting pushed), not driving shots. `Shooter/Sh
 - Still robot = exactly the old aim. Desktop sim: 10 in/s push 5.9 in miss -> 0.35 in; 60 deg/s spin 4.1 -> 0.9 in.
 - To do on the robot: push the robot in the LUT test and check pinpoint vs pose-diff telemetry agree (confirms the
   Pinpoint velocity is field frame: push along field +x with the robot turned 90 deg, both should read +x).
-  Then measure `lutTimesOfFlight` (placeholders 0.40-0.60 s) with slow-mo video, and check `extraLeadMs`.
+  Then measure CRShooter `lutTimesOfFlight` (placeholders 0.40-0.60 s; always used, even with UnderShooter active) with slow-mo video, and check `extraLeadMs`.
 - While driving fast the turret pre-swings (capped, about 20 deg at full speed) and swings back on stopping.
   Turn `enabledInAuto` off if that bothers the autos.
 - The older full design (zones, brake-and-shoot, fire gate, Foresight stop prediction) is not built.
