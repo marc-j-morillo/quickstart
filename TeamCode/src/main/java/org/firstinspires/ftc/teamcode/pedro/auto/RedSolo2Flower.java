@@ -7,6 +7,7 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inA
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
+import com.pedropathing.api.Paths;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
@@ -37,9 +38,10 @@ public class RedSolo2Flower extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose startAndShootPreload = poseFactory.of(54.0612, 8.2201, 90);
+    private final Pose start = poseFactory.of(58, 8, 90);
     private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
+    private final Pose shootLeft1Start = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
     private final Pose shootLeft1Control1 = poseFactory.of(32.4282, 44.863, 0);
     private final Pose shootLeft1Control2 = poseFactory.of(24.7852, 95.1585, 0);
@@ -48,21 +50,22 @@ public class RedSolo2Flower extends LinearOpMode {
     private final Pose shootLeft2Segment1Heading = poseFactory.of(47.1667, 115, 90);
     private final Pose shootLeft2Segment2Start = poseFactory.of(47.1667, 115, 90);
     private final Pose shootLeft2Segment2End = poseFactory.of(47.1667, 115, 60);
-    private final Pose moveToGarden = poseFactory.of(27.1281, 24.1733, -89.1749);
+    private final Pose moveToGarden = poseFactory.of(27.1281, 24.1733, -89.0918);
     private final Pose moveToGardenControl1 = poseFactory.of(25.9496, 98.5156, 0);
     private final Pose moveToGardenSegment1Start = poseFactory.of(27.1281, 24.1733, 60);
     private final Pose moveToGardenSegment1End = poseFactory.of(27.1281, 24.1733, -100);
     private final Pose intakeGarden = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenControl1 = poseFactory.of(30.29, 7.694, 0);
+    private final Pose intakeGardenControl1 = poseFactory.of(29.6504, 8, 0);
     private final Pose intakeGardenSegment1Start = poseFactory.of(7.694, 6.7067, -90);
     private final Pose intakeGardenSegment1End = poseFactory.of(7.694, 6.7067, 180);
     private final Pose intakeGardenSegment2Heading = poseFactory.of(7.694, 6.7067, 180);
+    private final Pose shootGardenStart = poseFactory.of(7.694, 6.7067, 180);
     private final Pose shootGarden = poseFactory.of(60, 20, 192);
     private final Pose park = poseFactory.of(15, 90, 90);
     private final Pose parkControl1 = poseFactory.of(11.4339, 56.772, 0);
     private final Pose parkSegment1Start = poseFactory.of(15, 90, 192);
     private final Pose parkSegment1End = poseFactory.of(15, 90, 125);
-    private final Pose parkSegment3Start = poseFactory.of(15, 90, 87.7245);
+    private final Pose parkSegment3Start = poseFactory.of(15, 90, 89.7178);
     private final Pose parkSegment3End = poseFactory.of(15, 90, 90);
 
     // Autonomous routine
@@ -127,7 +130,7 @@ public class RedSolo2Flower extends LinearOpMode {
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = robot.getFollower();
-        follower.setPose(startAndShootPreload);
+        follower.setPose(start);
         follower.update();
 
         startPose = follower.pose();
@@ -160,34 +163,34 @@ public class RedSolo2Flower extends LinearOpMode {
     }
 
     public Path intakeAllianceFlower() {
-        return curve(startAndShootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(startAndShootPreload, intakeAllianceFlower);
+        return Paths.curve(start, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(start, intakeAllianceFlower);
     }
 
     public Path shootLeft1() {
-        return curve(intakeAllianceFlower, shootLeft1Control1, shootLeft1Control2, shootLeft1).linear(intakeAllianceFlower, shootLeft1);
+        return Paths.curve(shootLeft1Start, shootLeft1Control1, shootLeft1Control2, shootLeft1).linear(shootLeft1Start, shootLeft1);
     }
 
     public Path intakeLeftFlower() {
-        return line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower);
+        return Paths.line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower);
     }
 
     public Path shootLeft2() {
-        return line(intakeLeftFlower, shootLeft2).heading(Interpolator.piecewise().until(0.5076, Interpolator.constant(shootLeft2Segment1Heading)).until(1, Interpolator.linear(shootLeft2Segment2Start, shootLeft2Segment2End)));
+        return Paths.line(intakeLeftFlower, shootLeft2).heading(Interpolator.piecewise().until(0.5013, Interpolator.constant(shootLeft2Segment1Heading)).until(1, Interpolator.linear(shootLeft2Segment2Start, shootLeft2Segment2End)));
     }
 
     public Path moveToGarden() {
-        return curve(shootLeft2, moveToGardenControl1, moveToGarden).heading(Interpolator.piecewise().until(0.4918, Interpolator.linear(moveToGardenSegment1Start, moveToGardenSegment1End)).until(1, Interpolator.tangent));
+        return Paths.curve(shootLeft2, moveToGardenControl1, moveToGarden).heading(Interpolator.piecewise().until(0.4918, Interpolator.linear(moveToGardenSegment1Start, moveToGardenSegment1End)).until(1, Interpolator.tangent));
     }
 
     public Path intakeGarden() {
-        return curve(moveToGarden, intakeGardenControl1, intakeGarden).heading(Interpolator.piecewise().until(0.3326, Interpolator.linear(intakeGardenSegment1Start, intakeGardenSegment1End)).until(1, Interpolator.constant(intakeGardenSegment2Heading)));
+        return Paths.curve(moveToGarden, intakeGardenControl1, intakeGarden).heading(Interpolator.piecewise().until(0.3326, Interpolator.linear(intakeGardenSegment1Start, intakeGardenSegment1End)).until(1, Interpolator.constant(intakeGardenSegment2Heading)));
     }
 
     public Path shootGarden() {
-        return line(intakeGarden, shootGarden).linear(intakeGarden, shootGarden);
+        return Paths.line(shootGardenStart, shootGarden).linear(shootGardenStart, shootGarden);
     }
 
     public Path park() {
-        return curve(shootGarden, parkControl1, park).heading(Interpolator.piecewise().until(0.3593, Interpolator.linear(parkSegment1Start, parkSegment1End)).until(0.9631, Interpolator.tangent).until(1, Interpolator.linear(parkSegment3Start, parkSegment3End)));
+        return Paths.curve(shootGarden, parkControl1, park).heading(Interpolator.piecewise().until(0.3593, Interpolator.linear(parkSegment1Start, parkSegment1End)).until(0.9498, Interpolator.tangent).until(1, Interpolator.linear(parkSegment3Start, parkSegment3End)));
     }
 }

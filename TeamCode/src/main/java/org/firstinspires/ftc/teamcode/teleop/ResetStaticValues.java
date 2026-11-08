@@ -20,8 +20,19 @@ import java.util.List;
 public class ResetStaticValues extends OpMode {
     private static final int MAX_LISTED = 25; // the Driver Station screen only fits so many lines
 
+    public ResetStaticValues(){
+
+    }
     @Override
     public void init() {
+        resetStaticValues();
+    }
+
+    @Override
+    public void loop() {
+    }
+
+    public void resetStaticValues() {
         if (!StaticDefaults.hasSnapshot()) {
             telemetry.addLine("NOTHING RESET: the starting values weren't recorded when the app started.");
             telemetry.addLine("Restart the Robot Controller app instead, and check the robot log for StaticDefaults.");
@@ -47,9 +58,5 @@ public class ResetStaticValues extends OpMode {
         telemetry.addLine();
         telemetry.addLine("Done, you can stop this opmode.");
         telemetry.update();
-    }
-
-    @Override
-    public void loop() {
     }
 }

@@ -23,6 +23,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.pedropathing.paths.interpolator.Interpolator;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.teleop.ResetStaticValues;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
@@ -34,8 +35,8 @@ public class ShootPreloadRed extends LinearOpMode {
     private Follower follower;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
-    private final Pose start = poseFactory.of(58, 7, 90);
-    private final Pose startAndShootPreload = poseFactory.of(54.0612, 8.2201, 90);
+    private final Pose start = poseFactory.of(58, 8, 90);
+    private final Pose startAndShootPreload = poseFactory.of(58, 8, 90);
     private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
     private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);

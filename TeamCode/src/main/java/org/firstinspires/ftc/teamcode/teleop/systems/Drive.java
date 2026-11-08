@@ -15,6 +15,8 @@ import com.pedropathing.follower.ManualDrive;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
+//import kotlin._Assertions;
+
 /**
  * Drivetrain + localization through the Pedro follower (pedro/Constants: Mecanum drivetrain, Pinpoint localizer).
  * There is only one follower: autos path with it through Robot.getFollower(), teleops drive it with drive(gamepad).
@@ -38,11 +40,28 @@ public class Drive {
     public static double redDriverHeading = 0, blueDriverHeading = 180;
 
 
+
     public Drive(HardwareMap hardwareMap, boolean fieldCentric) {
         follower = Constants.create(hardwareMap); // resets the Pinpoint and waits for its IMU to recalibrate
         // The pose the last auto ended at (used once), or the middle of the field at 0 deg if no auto ran.
         // Autos set their own start pose right after this.
         follower.setPose(FollowerPose.takeStartPose());
+        update();
+
+        this.fieldCentric = fieldCentric;
+    }
+
+
+    // Constructor for competition tele that automatically sets the start position
+    public Drive(HardwareMap hardwareMap, boolean fieldCentric, boolean isCompTele) {
+        follower = Constants.create(hardwareMap); // resets the Pinpoint and waits for its IMU to recalibrate
+        // The pose the last auto ended at (used once), or the middle of the field at 0 deg if no auto ran.
+        // Autos set their own start pose right after this.
+        if (isCompTele) {
+            setStartTeleOp();
+        } else {
+            follower.setPose(FollowerPose.takeStartPose());
+        }
         update();
 
         this.fieldCentric = fieldCentric;
@@ -78,6 +97,7 @@ public class Drive {
         if (gamepad1.leftStickButtonWasPressed()) fieldCentric = !fieldCentric;
         if (gamepad1.dpadDownWasPressed()) resetHeading();
         if (gamepad1.shareWasPressed()) relocalize();
+        FollowerPose.update(follower.pose());
 
         drive(gamepad1);
     }
@@ -117,6 +137,10 @@ public class Drive {
     /** Relocalize to the GoalTargets relocalize pose (configurable, blue mirrored). */
     public void relocalize() {
         setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+    }
+
+    public void setStartTeleOp() {
+        setPose(15, 90, 90);
     }
 
     public static double driverHeading() {

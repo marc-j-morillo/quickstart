@@ -69,6 +69,7 @@ public class Robot {
 
 
     public Robot(HardwareMap hardwareMap) {
+        transportState = TransportState.HOME;
         battery = new BatteryVoltage(hardwareMap);
         voltageMultiplier = battery.multiplier();
         shooter = new Shooter(hardwareMap);

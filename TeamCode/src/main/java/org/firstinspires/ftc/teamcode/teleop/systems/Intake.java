@@ -67,7 +67,7 @@ public class Intake {
     public static double blockerClosed = 0.85;
 
     //FLOWER WEDGE POSITIONS (each servo has its own; find them with FlowerWedgeTest, which edits these)
-    public static double leftWedgeDown = 0.63;   // TEMPORARY VALUE
+    public static double leftWedgeDown = 0.61;   // TEMPORARY VALUE
     public static double leftWedgeUp = 0;    // TEMPORARY VALUE
     public static double rightWedgeDown = 0.6;  // TEMPORARY VALUE
     public static double rightWedgeUp = 0;   // TEMPORARY VALUE

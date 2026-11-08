@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BatteryVoltage;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 
@@ -81,7 +82,7 @@ public abstract class CompetitionTeleop extends OpMode {
         GlobalVars.inAuto = false;
         Shooter.useTargetOverride = false;
 
-        drive = new Drive(hardwareMap, true);
+        drive = new Drive(hardwareMap, true, true);
         intake = new Intake(hardwareMap);   // gate closed, wedge up
         shooter = new Shooter(hardwareMap); // also resets the offsets and the side to RIGHT
         battery = new BatteryVoltage(hardwareMap);
@@ -117,6 +118,14 @@ public abstract class CompetitionTeleop extends OpMode {
         boolean gateOpen = gamepad1.right_bumper; // open only while held
         intake.setGateOpen(gateOpen);
         rumbleWhile(gateOpen);
+
+        // ================= SHOOTING SIDE =================
+        // Automatically change the target based on which side the robot is on
+        if (FollowerPose.botY < 58) {
+            GoalTargets.leftSide = false;
+        } else if (FollowerPose.botY > 83) {
+            GoalTargets.leftSide = true;
+        }
 
         // ================= STATE =================
         boolean rightTrigger = gamepad1.right_trigger > triggerThreshold;
@@ -171,7 +180,7 @@ public abstract class CompetitionTeleop extends OpMode {
         }
 
         // ----- gamepad2: flower wedge (the servos are set in loop()) -----
-        if (gamepad2.yWasPressed()) flowerWedgeDown = !flowerWedgeDown;
+        if (gamepad2.yWasPressed() || gamepad1.yWasPressed()) flowerWedgeDown = !flowerWedgeDown;
     }
 
     /** Rumbles gamepad1 the whole time `on` is true, only sending a command when it changes. */
