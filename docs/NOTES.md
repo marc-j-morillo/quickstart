@@ -39,25 +39,25 @@ line to the log at the bottom.
 - Driver-2 rpm offset converts with motor rpm, so with the 2:1 reduction each 10 rpm step is ~5 rpm at the wheel
   (user chose to leave it).
 
-## In progress: shooting on the move (design only, no code yet)
-Plan discussed, waiting on the user's answers:
-- Aim at a "virtual goal" = goal - robot velocity x flight time (iterate 2-3x); turret, speed and hood all use it.
-  Needs a flight-time vs distance table per shooter config.
-- Aim from the predicted release pose (pose + velocity x total delay: loop, turret, feed).
-- Zones with policies: close zone = moving shots under a speed cap; far zone = brake-and-shoot (predict the stop
-  pose with Pedro Foresight, pre-aim, fire when slow); optional constant-distance "orbit" lane.
-- Fire gate: predicted release pose in zone, speed / turn rate under limits, flywheel in tolerance, turret settled.
-- Braking model already tuned in `pedro/Constants.foresightConfig` (forward stop distance = 0.155 v + 0.0008 v^2,
-  strafe = 0.101 v + 0.0014 v^2, heading = 0.056 w + 0.005 w^2). Validate it against teleop braking with logs.
-- Build order: Pedro follower in teleop + flight-time table, then brake-and-shoot, then low-speed moving shots,
-  then moving shots in auto.
-- Open questions asked: which zones, aim tolerance, motion types, max speed, auto-fire vs manual, stream vs single,
-  whether the robot may hold a point, feed delay, turret feedback, flywheel recovery, which shooter at comp,
-  turret center offset, switching teleop to Pedro's follower, whether Foresight was tuned on the current robot,
-  slow-mo camera and practice time, zones editable in Panels.
+## Shoot on the move (branch `shoot-on-the-move`, not merged, untested on the robot)
+For small motion while shooting (getting pushed), not driving shots. `Shooter/ShootOnTheMove.java`, run by
+`Shooter.updateAim()`, so every opmode using the Shooter gets it. Settings in Panels under ShootOnTheMove.
+- Velocity: Pinpoint (Pedro `follower.velocity()`, field frame; set in `FollowerPose` by `Drive.update()` and
+  `Robot.update(Pose)`; the LUT test reads its raw Pinpoint), or the pose change per loop if that's missing or
+  `velocitySource = POSE_DIFFERENCE`. Low-pass 40 ms, deadband 1.5 in/s / 4 deg/s (ramps in to 2x), caps 20 in/s /
+  180 deg/s. Pose-difference jumps over 150 in/s / 720 deg/s (relocalize) are skipped.
+- Lead: aims from pose + velocity x lead and heading + turn rate x lead, lead = TurretPollen.smoothingTimeMs + 40 ms.
+- Ball flight: aims at goal - turret velocity x time of flight (3 iterations); flywheel/hood use that distance.
+- Still robot = exactly the old aim. Desktop sim: 10 in/s push 5.9 in miss -> 0.35 in; 60 deg/s spin 4.1 -> 0.9 in.
+- To do on the robot: push the robot in the LUT test and check pinpoint vs pose-diff telemetry agree (confirms the
+  Pinpoint velocity is field frame: push along field +x with the robot turned 90 deg, both should read +x).
+  Then measure `lutTimesOfFlight` (placeholders 0.40-0.60 s) with slow-mo video, and check `extraLeadMs`.
+- While driving fast the turret pre-swings (capped, about 20 deg at full speed) and swings back on stopping.
+  Turn `enabledInAuto` off if that bothers the autos.
+- The older full design (zones, brake-and-shoot, fire gate, Foresight stop prediction) is not built.
 
 ## Next up
-- Get answers to the shoot-on-the-move questions, then start with the groundwork.
+- Shoot on the move: robot checks above, measure time of flight, then decide whether to merge the branch.
 - Tune: flower wedge positions (FlowerWedgeTest), shooting kP table, UnderShooter values.
 
 ## Log
@@ -73,3 +73,6 @@ Plan discussed, waiting on the user's answers:
 - 2026-11-07: Added `ResetStaticValues` opmode + `StaticDefaults`: records every TeamCode static field (and the
   contents of arrays / TeamCode objects like `CRShooter.values`) when the app starts, and puts them back on INIT.
   Logic tested on the desktop with stubs; the `@OnCreate` hook and DexFile class listing are untested on the robot.
+- 2026-11-08: Shoot on the move (small motion / getting pushed) on branch `shoot-on-the-move`: ShootOnTheMove
+  (lead + virtual goal), Pinpoint velocity in FollowerPose, time-of-flight table in the shooter configs, telemetry
+  in CompetitionTeleop and the LUT test. Simulated on the desktop, untested on the robot.

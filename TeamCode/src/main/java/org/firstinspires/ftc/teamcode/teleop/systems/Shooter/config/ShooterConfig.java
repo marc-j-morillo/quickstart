@@ -49,6 +49,12 @@ public class ShooterConfig {
     public boolean useShootingKpLut;
     public double[] lutShootingKps = new double[0];
 
+    // Ball time of flight in SECONDS, by distance (same distances as lutDistances, own slot count like the kP table):
+    // from leaving the shooter to reaching the goal. Used by ShootOnTheMove to aim ahead of the robot's motion.
+    // Measure with a slow-motion video: frames from leaving to reaching the goal / the video's fps.
+    // Empty = no ball-flight correction (the lead correction still runs).
+    public double[] lutTimesOfFlight = new double[0];
+
     // Added on top of the LUT output (LutTuner adjusts these, then bakes them into a new point)
     public double velocityTrim;
     public double hoodTrim;

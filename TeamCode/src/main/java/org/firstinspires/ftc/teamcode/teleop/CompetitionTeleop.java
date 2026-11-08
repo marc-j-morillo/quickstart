@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
 import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.ShootOnTheMove;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BatteryVoltage;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
@@ -92,6 +93,11 @@ public abstract class CompetitionTeleop extends OpMode {
         telemetry.addData("Side", () -> GoalTargets.leftSide ? "LEFT" : "RIGHT");
         telemetry.addData("Turret offset (deg)", () -> String.format("%+.0f", Shooter.turretAngleOffset));
         telemetry.addData("RPM offset", () -> String.format("%+.0f", Shooter.velocityOffsetRpm));
+        telemetry.addData("SOTM vel x/y (in/s) turn (deg/s)", () -> String.format("%.1f / %.1f / %.0f %s",
+                ShootOnTheMove.velX, ShootOnTheMove.velY, ShootOnTheMove.turnRate,
+                ShootOnTheMove.usingPinpoint ? "pinpoint" : "pose diff"));
+        telemetry.addData("SOTM aim shift (deg) / dist shift (in)", () -> String.format("%+.1f / %+.1f",
+                ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
         telemetry.update();
     }
 

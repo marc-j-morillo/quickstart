@@ -22,9 +22,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.ShootOnTheMove;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -353,6 +355,13 @@ public class ActuallyEverythingLutTest extends OpMode {
         telemetry.addData("Distance to target (in)", Shooter.distanceFromLimelightToTagInches);
         telemetry.addData("Flywheel velocity", Shooter.shooterVelocity);
         telemetry.addData("Flywheel target", Shooter.shooterVelocityTarget);
+        // Shoot on the move: push the robot by hand. Pinpoint and pose-diff should agree (field frame).
+        telemetry.addData("SOTM pinpoint vel x/y/turn", String.format("%.1f / %.1f / %.0f",
+                ShootOnTheMove.pinpointVelX, ShootOnTheMove.pinpointVelY, ShootOnTheMove.pinpointTurnRate));
+        telemetry.addData("SOTM pose-diff vel x/y/turn", String.format("%.1f / %.1f / %.0f",
+                ShootOnTheMove.poseDiffVelX, ShootOnTheMove.poseDiffVelY, ShootOnTheMove.poseDiffTurnRate));
+        telemetry.addData("SOTM aim shift (deg) / dist shift (in)", String.format("%+.1f / %+.1f",
+                ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
         telemetry.addLine();
 
         telemetry.addLine("VALUES:");
@@ -441,6 +450,9 @@ public class ActuallyEverythingLutTest extends OpMode {
         FollowerPose.botX = pose.getX(DistanceUnit.INCH);
         FollowerPose.botY = pose.getY(DistanceUnit.INCH);
         FollowerPose.botHeading = pose.getHeading(AngleUnit.DEGREES);
+        // For shoot on the move (field frame, same as Pedro's PinpointLocalizer reads it)
+        FollowerPose.setVelocity(pinpoint.getVelX(DistanceUnit.INCH), pinpoint.getVelY(DistanceUnit.INCH),
+                pinpoint.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
     }
 
     // ------------------------------------------------------------------

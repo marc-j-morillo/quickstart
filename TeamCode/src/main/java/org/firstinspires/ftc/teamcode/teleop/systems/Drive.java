@@ -102,10 +102,13 @@ public class Drive {
         drive(gamepad1);
     }
 
-    /** Updates the follower (localizer + whatever it's doing) and FollowerPose. For autos and when not driving. */
+    /**
+     * Updates the follower (localizer + whatever it's doing) and FollowerPose (pose + the Pinpoint's field-frame
+     * velocity, for shoot on the move). For autos and when not driving.
+     */
     public void update() {
         follower.update();
-        FollowerPose.update(follower.pose());
+        FollowerPose.update(follower.pose(), follower.velocity());
     }
 
     public Follower getFollower() {

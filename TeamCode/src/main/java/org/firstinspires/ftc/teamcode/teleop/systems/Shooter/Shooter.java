@@ -110,11 +110,16 @@ public class Shooter {
     public SafeLut velocityLut = new SafeLut();
     public SafeLut hoodAngleLut = new SafeLut();
     public SafeLut shootingKpLut = new SafeLut();
-    private double[] builtDistances, builtVelocities, builtHoods, builtShootingKps;
+    public SafeLut timeOfFlightLut = new SafeLut();
+    private double[] builtDistances, builtVelocities, builtHoods, builtShootingKps, builtTimesOfFlight;
 
+    // Shoot on the move: aim point / turret position / heading corrected for the robot's motion (see ShootOnTheMove)
+    private final ShootOnTheMove shootOnTheMove = new ShootOnTheMove();
+
+    // Distance used for the LUTs: to the shoot-on-the-move aim point (the goal itself when still)
     @IgnoreConfigurable public static double distanceFromLimelightToTagInches;
     @IgnoreConfigurable public static double lutVelocity, lutHood, lutShootingKp; // raw LUT output at the current distance
-    @IgnoreConfigurable public static double shooterX, shooterY;   // field position of the turret
+    @IgnoreConfigurable public static double shooterX, shooterY;   // field position of the turret (predicted, see ShootOnTheMove)
 
     public Shooter(HardwareMap hardwareMap) {
         rebuildLutsIfChanged();
@@ -170,19 +175,27 @@ public class Shooter {
     /**
      * Turret aim, hood and the LUT lookups (velocity, hood, shooting kP) for the current pose. update() calls this;
      * opmodes that run the flywheel themselves call this and then runFlywheel().
+     * Includes the shoot-on-the-move correction (ShootOnTheMove): with the robot still it changes nothing.
      */
     public void updateAim() {
         rebuildLutsIfChanged();
-        updateShooterPosition(true);
 
-        double deltaX = goalX() - shooterX;
-        double deltaY = goalY() - shooterY;
-        distanceFromLimelightToTagInches = Math.hypot(deltaX, deltaY);
+        ShooterConfig c = config();
+        shootOnTheMove.update(botX, botY, botHeading, c.turretPollenXOffset, c.turretPollenYOffset,
+                goalX(), goalY(), timeOfFlightLut);
+        shooterX = shootOnTheMove.shooterX;
+        shooterY = shootOnTheMove.shooterY;
+
+        distanceFromLimelightToTagInches = ShootOnTheMove.compensateDistance
+                ? shootOnTheMove.aimDistance
+                : shootOnTheMove.realDistance;
         lutVelocity = velocityLut.get(distanceFromLimelightToTagInches);
         lutHood = hoodAngleLut.get(distanceFromLimelightToTagInches);
         lutShootingKp = shootingKpLut.get(distanceFromLimelightToTagInches);
 
-        turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY) + turretAngleOffset;
+        double deltaX = shootOnTheMove.aimX - shooterX;
+        double deltaY = shootOnTheMove.aimY - shooterY;
+        turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY, shootOnTheMove.headingDeg) + turretAngleOffset;
         turretPollen.aimAt(turretTargetAnglePollen);
         turretTargetPositionPollen = turretPollen.getCommandedPosition();
         //turretTargetPositionNectar = turretTargetToGoal(false);
@@ -226,16 +239,8 @@ public class Shooter {
 
 
     // -------------------------------- AIM POINT ---------------------------------
-
-    /** Field position of the turret: odometry center plus the turret offset rotated by the heading. */
-    private void updateShooterPosition(boolean isPollen) {
-        double xOffset = isPollen ? config().turretPollenXOffset : config().turretNectarXOffset;
-        double yOffset = isPollen ? config().turretPollenYOffset : config().turretNectarYOffset;
-        double heading = Math.toRadians(botHeading);
-
-        shooterX = botX + xOffset * Math.cos(heading) - yOffset * Math.sin(heading);
-        shooterY = botY + xOffset * Math.sin(heading) + yOffset * Math.cos(heading);
-    }
+    // The turret's field position (odometry center + the turret offset rotated by the heading) is worked out in
+    // ShootOnTheMove, together with the motion correction.
 
     private double goalX() {
         if (useTargetOverride) return targetOverrideX;
@@ -257,10 +262,13 @@ public class Shooter {
         return degrees;
     }
 
-    /** Turret angle (degrees, 0 = robot-forward) that points at the goal. TurretPollen clamps it to its limits. */
-    private double turretTargetToGoal(double deltaX, double deltaY) {
+    /**
+     * Turret angle (degrees, 0 = robot-forward) that points along (deltaX, deltaY) with the robot at headingDeg.
+     * TurretPollen clamps it to its limits.
+     */
+    private double turretTargetToGoal(double deltaX, double deltaY, double headingDeg) {
         double goalAngle = Math.toDegrees(Math.atan2(deltaY, deltaX));
-        return angleWrap(goalAngle - botHeading);
+        return angleWrap(goalAngle - headingDeg);
     }
 
 
@@ -307,7 +315,10 @@ public class Shooter {
 
     // -------------------------------- SHOT TABLE ---------------------------------
 
-    /** Rebuilds velocityLut / hoodAngleLut / shootingKpLut from the lut arrays if any of them changed since the last build. */
+    /**
+     * Rebuilds velocityLut / hoodAngleLut / shootingKpLut / timeOfFlightLut from the lut arrays if any of them
+     * changed since the last build.
+     */
     public void rebuildLutsIfChanged() {
         // Read the active config once, so switching configs mid-rebuild can't mix two configs' tables.
         // Switching configs changes the arrays, so the tables rebuild automatically.
@@ -315,9 +326,20 @@ public class Shooter {
         if (Arrays.equals(c.lutDistances, builtDistances)
                 && Arrays.equals(c.lutVelocities, builtVelocities)
                 && Arrays.equals(c.lutHoods, builtHoods)
-                && Arrays.equals(c.lutShootingKps, builtShootingKps)) {
+                && Arrays.equals(c.lutShootingKps, builtShootingKps)
+                && Arrays.equals(c.lutTimesOfFlight, builtTimesOfFlight)) {
             return;
         }
+
+        SafeLut times = new SafeLut();
+        int tofPoints = Math.min(c.lutDistances.length, c.lutTimesOfFlight.length);
+        for (int i = 0; i < tofPoints; i++) {
+            if (c.lutDistances[i] <= 0) continue; // empty slot
+            times.add(c.lutDistances[i], c.lutTimesOfFlight[i]);
+        }
+        times.createLUT();
+        timeOfFlightLut = times;
+        builtTimesOfFlight = c.lutTimesOfFlight.clone();
 
         SafeLut kps = new SafeLut();
         int kpPoints = Math.min(c.lutDistances.length, c.lutShootingKps.length);

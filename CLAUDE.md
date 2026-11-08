@@ -39,6 +39,9 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
 - `teleop/systems/Shooter/TurretPollen.java`: positional Axon turret (two servos). `angle = (pos - centerPosition) * degreesPerPosition`
   (center 0.5, -345 deg/position, PWM 500-2500 us). `aimAt` picks the reachable equivalent angle and holds the
   nearest limit in the dead zone. Output smoothing (`smoothingTimeMs`), `rightServoEnabled`, output on/off.
+- `teleop/systems/Shooter/ShootOnTheMove.java` (branch `shoot-on-the-move`): run by `updateAim`, corrects the aim for robot
+  motion (lead by turret lag + virtual goal = goal - velocity x time of flight). Velocity from `FollowerPose.velX/velY/turnRateDeg`
+  (Pinpoint, field frame) or pose differences. Time of flight table: `ShooterConfig.lutTimesOfFlight`.
 - `teleop/systems/utils/GoalTargets.java`: red goal points (RIGHT / LEFT side), relocalize pose. Blue mirrors red:
   x -> 141.5 - x, heading -> 180 - heading.
 - `teleop/systems/Drive.java`: the one Pedro follower (drivetrain + Pinpoint localizer from `pedro/Constants`).

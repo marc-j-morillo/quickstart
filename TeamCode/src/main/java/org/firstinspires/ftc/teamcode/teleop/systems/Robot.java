@@ -109,7 +109,8 @@ public class Robot {
         BulkReads.clear(allHubs); // before any hardware read this loop
         updateVoltage();
 
-        FollowerPose.update(currentPose);
+        // Autos pass this same follower's pose (after follower.update()), so its velocity matches the pose
+        FollowerPose.update(currentPose, drive.follower.velocity());
         shooter.update(voltageMultiplier, false);
 
         // Automatically change from POWER_SHOOTER to SHOOT when the shooter is at the target velocity.

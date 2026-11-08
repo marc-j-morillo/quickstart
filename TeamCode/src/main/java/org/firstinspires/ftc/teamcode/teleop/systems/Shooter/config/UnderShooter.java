@@ -90,6 +90,22 @@ public class UnderShooter {
                 0.00265, // 70 in
         };
 
+        // PLACEHOLDER GUESSES (same as CRShooter): measure with slow-mo video and replace
+        values.lutTimesOfFlight = new double[]{
+                0.40, //  0 in (empty slot, ignored)
+                0.40, // 20 in
+                0.42, // 25 in
+                0.44, // 30 in
+                0.46, // 35 in
+                0.48, // 40 in
+                0.50, // 45 in
+                0.52, // 50 in
+                0.54, // 55 in
+                0.56, // 60 in
+                0.58, // 65 in
+                0.60, // 70 in
+        };
+
         values.velocityTrim = 0;
         values.hoodTrim = 0;
     }

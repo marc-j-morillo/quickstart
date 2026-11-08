@@ -92,6 +92,23 @@ public class CRShooter {
                 0.0029, // 70 in - 11
         };
 
+        // PLACEHOLDER GUESSES (0.40 s at 20 in to 0.60 s at 70 in): measure with slow-mo video and replace.
+        // A time that is 20% off only leaves 20% of the ball-flight correction undone.
+        values.lutTimesOfFlight = new double[]{
+                0.40, //  0 in (empty slot, ignored) - 0
+                0.40, // 20 in - 1
+                0.42, // 25 in - 2
+                0.44, // 30 in - 3
+                0.46, // 35 in - 4
+                0.48, // 40 in - 5
+                0.50, // 45 in - 6
+                0.52, // 50 in - 7
+                0.54, // 55 in - 8
+                0.56, // 60 in - 9
+                0.58, // 65 in - 10
+                0.60, // 70 in - 11
+        };
+
         values.velocityTrim = 0;
         values.hoodTrim = 0;
     }
