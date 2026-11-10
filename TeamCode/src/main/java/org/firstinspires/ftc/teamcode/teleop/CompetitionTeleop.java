@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
 import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.LimelightAim;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.ShootOnTheMove;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BatteryVoltage;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.BulkReads;
@@ -24,7 +25,9 @@ import java.util.List;
  *               pose the auto ended at, or the middle of the field at 0 deg if no auto ran.
  *   Intake .... intake / transfer rollers, gate, flower wedge
  *   Shooter ... turret + hood aimed from the LUTs at the GoalTargets point for the current side; flywheel always at
- *               the LUT speed for the current distance (plus the rpm offset), so it's ready to shoot
+ *               the LUT speed for the current distance (plus the rpm offset), so it's ready to shoot.
+ *               Inside a LimelightAim zone with the tag in view, the turret angle and LUT distance come from the
+ *               Limelight instead of odometry ("Aim" line in telemetry)
  *
  * States (picked from gamepad1 every loop):
  *   SHOOTING .. gate open (right bumper held) AND right trigger: Intake.runFeed (no transfer stall check),
@@ -98,6 +101,7 @@ public abstract class CompetitionTeleop extends OpMode {
                 ShootOnTheMove.usingPinpoint ? "pinpoint" : "pose diff"));
         telemetry.addData("SOTM aim shift (deg) / dist shift (in)", () -> String.format("%+.1f / %+.1f",
                 ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
+        telemetry.addData("Aim", () -> LimelightAim.active ? "LIMELIGHT" : "odometry (" + LimelightAim.status + ")");
         telemetry.update();
     }
 

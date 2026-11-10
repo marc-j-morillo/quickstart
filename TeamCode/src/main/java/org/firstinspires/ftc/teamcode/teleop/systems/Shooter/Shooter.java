@@ -116,8 +116,11 @@ public class Shooter {
 
     // Shoot on the move: aim point / turret position / heading corrected for the robot's motion (see ShootOnTheMove)
     private final ShootOnTheMove shootOnTheMove = new ShootOnTheMove();
+    // Limelight override: turret angle + LUT distance from the Limelight inside its zones (see LimelightAim)
+    private final LimelightAim limelightAim;
 
-    // Distance used for the LUTs: to the shoot-on-the-move aim point (the goal itself when still)
+    // Distance used for the LUTs: to the shoot-on-the-move aim point (the goal itself when still),
+    // or from the Limelight while LimelightAim.active
     @IgnoreConfigurable public static double distanceFromLimelightToTagInches;
     @IgnoreConfigurable public static double lutVelocity, lutHood, lutShootingKp; // raw LUT output at the current distance
     @IgnoreConfigurable public static double shooterX, shooterY;   // field position of the turret (predicted, see ShootOnTheMove)
@@ -129,6 +132,7 @@ public class Shooter {
         //turretNectar = new TurretNectar(hardwareMap);
         flywheel = new Flywheel(hardwareMap);
         hoodPollen = new HoodPollen(hardwareMap);
+        limelightAim = new LimelightAim(hardwareMap);
         shooterController = new PIDFController(config().shooterP, config().shooterI, config().shooterD, config().kV);
 
         shooterVelocity = dormant;
@@ -177,6 +181,7 @@ public class Shooter {
      * Turret aim, hood and the LUT lookups (velocity, hood, shooting kP) for the current pose. update() calls this;
      * opmodes that run the flywheel themselves call this and then runFlywheel().
      * Includes the shoot-on-the-move correction (ShootOnTheMove): with the robot still it changes nothing.
+     * Inside a Limelight zone with the tag in view, the turret angle and LUT distance come from the Limelight (LimelightAim).
      */
     public void updateAim() {
         rebuildLutsIfChanged();
@@ -187,18 +192,35 @@ public class Shooter {
         shooterX = shootOnTheMove.shooterX;
         shooterY = shootOnTheMove.shooterY;
 
-        distanceFromLimelightToTagInches = ShootOnTheMove.compensateDistance
+        // ----- Odometry aim (with shoot on the move) -----
+        double distance = ShootOnTheMove.compensateDistance
                 ? shootOnTheMove.aimDistance
                 : shootOnTheMove.realDistance;
+        double deltaX = shootOnTheMove.aimX - shooterX;
+        double deltaY = shootOnTheMove.aimY - shooterY;
+        double turretAngle = turretTargetToGoal(deltaX, deltaY, shootOnTheMove.headingDeg);
+
+        // ----- Limelight override (compared with the odometry aim without shoot on the move) -----
+        if (limelightAim.update(goalX(), goalY(), turretAngle - ShootOnTheMove.aimShiftDeg, shootOnTheMove.realDistance)) {
+            boolean sotm = LimelightAim.addShootOnTheMove;
+            if (LimelightAim.useForTurret) {
+                turretAngle = limelightAim.turretAngle + (sotm ? ShootOnTheMove.aimShiftDeg : 0);
+            }
+            if (LimelightAim.useForLut) {
+                distance = limelightAim.distance
+                        + (sotm && ShootOnTheMove.compensateDistance ? ShootOnTheMove.distanceShift : 0);
+            }
+        }
+
+        distanceFromLimelightToTagInches = distance;
         lutVelocity = velocityLut.get(distanceFromLimelightToTagInches);
         lutHood = hoodAngleLut.get(distanceFromLimelightToTagInches);
         lutShootingKp = shootingKpLut.get(distanceFromLimelightToTagInches);
 
-        double deltaX = shootOnTheMove.aimX - shooterX;
-        double deltaY = shootOnTheMove.aimY - shooterY;
-        turretTargetAnglePollen = turretTargetToGoal(deltaX, deltaY, shootOnTheMove.headingDeg) + turretAngleOffset;
+        turretTargetAnglePollen = turretAngle + turretAngleOffset;
         turretPollen.aimAt(turretTargetAnglePollen);
         turretTargetPositionPollen = turretPollen.getCommandedPosition();
+        limelightAim.record(turretPollen.getCommandedAngle(), botHeading);
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
 

@@ -56,7 +56,21 @@ For small motion while shooting (getting pushed), not driving shots. `Shooter/Sh
   Turn `enabledInAuto` off if that bothers the autos.
 - The older full design (zones, brake-and-shoot, fire gate, Foresight stop prediction) is not built.
 
+## Limelight aim override (branch `shoot-on-the-move`, untested on the robot)
+`Shooter/LimelightAim.java`, run by `Shooter.updateAim()`. Limelight is on the turret. Inside the zone for the current
+side (odometry robot center in a rectangle, red tuned, blue mirrored) with that side's tag in a fresh frame, the turret
+angle and LUT distance come from the Limelight; anywhere else, odometry as before. Shoot-on-the-move shifts are added on top.
+- Turret angle = commanded turret angle when the frame was taken (history, minus `servoLagMs`) + bearing to the goal
+  point - robot turn since the frame. Bearing from tx, range from the 3D tag pose (camera space, floor part).
+- Goal point = tag + (goal point - tag) offset rotated by heading + turret angle; tag positions default to the
+  GoalTargets points (offset 0 = aim straight at the tag).
+- Falls back to odometry if the frame is older than 120 ms or the Limelight disagrees with odometry by > 25 deg.
+- Placeholders to set: hardware name `limelight`, pipeline 0 (needs the right tag size), tag IDs (-1 = any),
+  tag field positions, camera offset/yaw on the turret, both zones. Calibrate in the LUT test: right after a
+  relocalize, Limelight vs odometry turret angle / distance telemetry should agree.
+
 ## Next up
+- Limelight: mount/configure, set tag IDs, tag positions and zones, compare with odometry in the LUT test.
 - Shoot on the move: robot checks above, measure time of flight, then decide whether to merge the branch.
 - Tune: flower wedge positions (FlowerWedgeTest), shooting kP table, UnderShooter values.
 
@@ -76,3 +90,5 @@ For small motion while shooting (getting pushed), not driving shots. `Shooter/Sh
 - 2026-11-08: Shoot on the move (small motion / getting pushed) on branch `shoot-on-the-move`: ShootOnTheMove
   (lead + virtual goal), Pinpoint velocity in FollowerPose, time-of-flight table in the shooter configs, telemetry
   in CompetitionTeleop and the LUT test. Simulated on the desktop, untested on the robot.
+- 2026-11-09: Limelight aim override (LimelightAim) on `shoot-on-the-move`: turret angle + LUT distance from the
+  turret-mounted Limelight inside per-side zones. Builds; untested on the robot (all settings are placeholders).

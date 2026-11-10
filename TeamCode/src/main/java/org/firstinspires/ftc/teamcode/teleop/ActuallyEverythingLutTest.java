@@ -26,6 +26,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.LimelightAim;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.ShootOnTheMove;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
@@ -362,6 +363,13 @@ public class ActuallyEverythingLutTest extends OpMode {
                 ShootOnTheMove.poseDiffVelX, ShootOnTheMove.poseDiffVelY, ShootOnTheMove.poseDiffTurnRate));
         telemetry.addData("SOTM aim shift (deg) / dist shift (in)", String.format("%+.1f / %+.1f",
                 ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
+        telemetry.addData("Limelight", LimelightAim.status);
+        telemetry.addData("Limelight tag / tx / range / age", String.format("%d / %+.1f deg / %.1f in / %.0f ms",
+                LimelightAim.seenTagId, LimelightAim.tx, LimelightAim.tagRangeIn, LimelightAim.frameAgeMs));
+        telemetry.addData("Turret angle limelight / odometry", String.format("%+.1f / %+.1f",
+                LimelightAim.limelightTurretAngle, LimelightAim.odometryTurretAngle));
+        telemetry.addData("Distance limelight / odometry", String.format("%.1f / %.1f",
+                LimelightAim.limelightDistance, LimelightAim.odometryDistance));
         telemetry.addLine();
 
         telemetry.addLine("VALUES:");
