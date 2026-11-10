@@ -50,12 +50,12 @@ public class CRShooter {
         values.lutVelocities = new double[]{
                 1660, //  0 in (empty slot, ignored) - 0
                 1660, // 20 in - 1
-                1665, // 25 in - 2
-                1665, // 30 in - 3
-                1680, // 35 in - 4
-                1680, // 40 in - 5
-                1700, // 45 in - 6
-                1750, // 50 in - 7
+                1675, // 25 in - 2
+                1680, // 30 in - 3
+                1685, // 35 in - 4
+                1700, // 40 in - 5
+                1750, // 45 in - 6
+                1760, // 50 in - 7
                 1740, // 55 in - 8
                 1765, // 60 in - 9
                 1780, // 65 in - 10
@@ -64,12 +64,12 @@ public class CRShooter {
         values.lutHoods = new double[]{
                 0, //  0 in (empty slot, ignored) - 0
                 0, // 20 in - 1
-                0.05, // 25 in - 2
-                0.075, // 30 in - 3
+                0.07, // 25 in - 2
+                0.12, // 30 in - 3
                 0.15, // 35 in - 4
-                0.18, // 40 in - 5
-                0.22, // 45 in - 6
-                0.25, // 50 in - 7
+                0.23, // 40 in - 5
+                0.27, // 45 in - 6
+                0.27, // 50 in - 7
                 0.275, // 55 in - 8
                 0.3, // 60 in - 9
                 0.325, // 65 in - 10
@@ -78,18 +78,18 @@ public class CRShooter {
 
         values.useShootingKpLut = true;
         values.lutShootingKps = new double[]{
-                0.00265, //  0 in (empty slot, ignored) - 0
-                0.0026, // 20 in - 1
-                0.0027, // 25 in - 2
-                0.0027, // 30 in - 3
-                0.0027, // 35 in - 4
-                0.00275, // 40 in - 5
-                0.0027, // 45 in - 6
-                0.0029, // 50 in - 7
-                0.00285, // 55 in - 8
-                0.00285, // 60 in - 9
-                0.0029, // 65 in - 10
-                0.0029, // 70 in - 11
+                0.00228, //  0 in (empty slot, ignored) - 0
+                0.00228, // 20 in - 1
+                0.00228, // 25 in - 2
+                0.00228, // 30 in - 3
+                0.00230, // 35 in - 4
+                0.00235, // 40 in - 5
+                0.00238, // 45 in - 6
+                0.00238, // 50 in - 7
+                0.00240, // 55 in - 8
+                0.00243, // 60 in - 9
+                0.00245, // 65 in - 10
+                0.00247, // 70 in - 11
         };
 
         // PLACEHOLDER GUESSES (0.40 s at 20 in to 0.60 s at 70 in): measure with slow-mo video and replace.
