@@ -14,6 +14,8 @@ import com.bylazar.configurables.annotations.Configurable;
  *   - two motors
  *   - two goBILDA weights
  */
+
+// adb connect 192.168.43.1:5555
 @Configurable
 public class CRShooter {
     public static ShooterConfig values = new ShooterConfig();
@@ -51,11 +53,11 @@ public class CRShooter {
                 1660, //  0 in (empty slot, ignored) - 0
                 1660, // 20 in - 1
                 1675, // 25 in - 2
-                1680, // 30 in - 3
-                1685, // 35 in - 4
+                1685, // 30 in - 3
+                1700, // 35 in - 4
                 1700, // 40 in - 5
-                1750, // 45 in - 6
-                1760, // 50 in - 7
+                1715, // 45 in - 6
+                1750, // 50 in - 7
                 1740, // 55 in - 8
                 1765, // 60 in - 9
                 1780, // 65 in - 10
@@ -65,11 +67,11 @@ public class CRShooter {
                 0, //  0 in (empty slot, ignored) - 0
                 0, // 20 in - 1
                 0.07, // 25 in - 2
-                0.12, // 30 in - 3
-                0.15, // 35 in - 4
+                0.10, // 30 in - 3
+                0.145, // 35 in - 4
                 0.23, // 40 in - 5
-                0.27, // 45 in - 6
-                0.27, // 50 in - 7
+                0.315, // 45 in - 6
+                0.325, // 50 in - 7
                 0.275, // 55 in - 8
                 0.3, // 60 in - 9
                 0.325, // 65 in - 10
@@ -84,7 +86,7 @@ public class CRShooter {
                 0.00228, // 30 in - 3
                 0.00230, // 35 in - 4
                 0.00235, // 40 in - 5
-                0.00238, // 45 in - 6
+                0.00237, // 45 in - 6
                 0.00238, // 50 in - 7
                 0.00240, // 55 in - 8
                 0.00243, // 60 in - 9
