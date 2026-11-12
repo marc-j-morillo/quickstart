@@ -42,6 +42,8 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
 - `teleop/systems/Shooter/ShootOnTheMove.java` (branch `shoot-on-the-move`): run by `updateAim`, corrects the aim for robot
   motion (lead by turret lag + virtual goal = goal - velocity x time of flight). Velocity from `FollowerPose.velX/velY/turnRateDeg`
   (Pinpoint, field frame) or pose differences. Time of flight table: `CRShooter.values.lutTimesOfFlight` (always CRShooter's, whichever config is active).
+- `teleop/systems/Shooter/LimelightAim.java` (branch `shoot-on-the-move`): turret-mounted Limelight override. Inside the
+  zone for the current side with the tag seen, `updateAim` uses its turret angle and LUT distance instead of odometry.
 - `teleop/systems/utils/GoalTargets.java`: red goal points (RIGHT / LEFT side), relocalize pose. Blue mirrors red:
   x -> 141.5 - x, heading -> 180 - heading.
 - `teleop/systems/Drive.java`: the one Pedro follower (drivetrain + Pinpoint localizer from `pedro/Constants`).
@@ -74,4 +76,4 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
 - Motors: `frontLeft`, `frontRight`, `backLeft`, `backRight`, `intakeMotor`, `transferMotor`, `shooter1`, `shooter2`
   (flywheel velocity is read from `shooter1`'s encoder).
 - Servos: `turretPollenLeft`, `turretPollenRight`, `hoodPollen`, `transferPollenBlocker` (gate), `flowerWedgeLeft`, `flowerWedgeRight`.
-- I2C: `pinpoint`. Unused/legacy names still in code: `turretEncoder`, `turretNectarLeft/Right`, `transferNectar`, `led`.
+- I2C: `pinpoint`. USB: `limelight` (Limelight 3A, optional: the override stays off without it). Unused/legacy names still in code: `turretEncoder`, `turretNectarLeft/Right`, `transferNectar`, `led`.
