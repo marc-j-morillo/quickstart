@@ -140,3 +140,7 @@ mode stays; the encoder only measures). Analog Input `turretEncoder`, optional (
 - 2026-11-14: HoodPanelsTest opmode (hood position from Panels). Comp teleop: gamepad2 triggers = hood offset
   +/-0.01 (`Shooter.hoodOffset`, added to the LUT hood, reset by gamepad2 a). Untested on the robot.
 - 2026-11-14: `Shooter.hoodConstantAddition` = 0.015 added to every hood command (Panels, under Shooter). Untested on the robot.
+- 2026-11-14: Autos: every path into a flower is `race(follow(...), waitMs(flowerPathTimeout))` (GlobalVars, 3000 ms),
+  then flowerIntakeWait as before, so a robot stuck on a flower still moves on. Auto INTAKE / POWER_SHOOTER has a
+  transfer stall check (`Intake.autoTransferStallMilliamps`); the after-every-path reset is not wired up yet.
+  CompetitionTeleop init sets all four red goal values (60,58 / 58,85) since autos change them. Untested on the robot.

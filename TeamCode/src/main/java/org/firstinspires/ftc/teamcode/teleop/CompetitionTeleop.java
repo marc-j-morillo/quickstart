@@ -85,6 +85,13 @@ public abstract class CompetitionTeleop extends OpMode {
 
     @Override
     public void init() {
+        // Teleop goal points (red, blue mirrors them). Set every init, because autos change these statics
+        // (e.g. RedSolo2Flower sets redRightY / redLeftY) and statics keep their value into the next opmode.
+        GoalTargets.redRightX = 60;
+        GoalTargets.redRightY = 58;
+        GoalTargets.redLeftX = 58;
+        GoalTargets.redLeftY = 85;
+
         hubs = BulkReads.enableManual(hardwareMap); // one bulk read per hub per loop
         GlobalVars.isRed = isRedAlliance();
         GlobalVars.inAuto = false;
@@ -117,6 +124,7 @@ public abstract class CompetitionTeleop extends OpMode {
     public void init_loop() {
         updateControls();
         telemetry.update();
+        drive.setPose(FollowerPose.botX, FollowerPose.botY, FollowerPose.botHeading);
     }
 
     @Override

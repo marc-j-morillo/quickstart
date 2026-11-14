@@ -12,6 +12,7 @@ import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.*;
 import static com.pedropathing.ivy.groups.Groups.parallel;
+import static com.pedropathing.ivy.groups.Groups.race;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
@@ -19,6 +20,7 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isR
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerPathTimeout;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
@@ -78,7 +80,8 @@ public class ShootPreload_Left extends LinearOpMode {
                 waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
-                follow(follower, intakeAllianceFlower()),
+                // Path into the flower, given up after flowerPathTimeout if it doesn't reach the end
+                race(follow(follower, intakeAllianceFlower()), waitMs(flowerPathTimeout)),
                 waitMs(flowerIntakeWait), // keep intaking at the flower
                 instant(() -> GoalTargets.leftSide = true),
                 parallel(

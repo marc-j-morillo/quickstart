@@ -52,4 +52,8 @@ public class GoalTargets {
     public static double relocalizeHeading() {
         return isRed ? redRelocalizeHeading : 180 - redRelocalizeHeading;
     }
+
+    public void setRedRightX(double x) {
+        redRightX = x;
+    }
 }

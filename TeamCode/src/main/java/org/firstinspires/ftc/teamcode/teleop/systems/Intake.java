@@ -19,6 +19,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.IgnoreConfigurable;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
@@ -60,15 +61,15 @@ public class Intake {
     public static final double dormant = 0;
     public static double intaking = 0.9; // TEMPORARY VALUE
     public static double outtaking = -0.9;
-    public static double semiTransferring = 0.18;
+    public static double semiTransferring = 0.70;
 
     //SERVO STATES
     public static double blockerOpen = 0.6;
     public static double blockerClosed = 0.85;
 
     //FLOWER WEDGE POSITIONS (each servo has its own; find them with FlowerWedgeTest, which edits these)
-    public static double leftWedgeDown = 0.8;   // TEMPORARY VALUE
-    public static double leftWedgeUp = 0.1;    // TEMPORARY VALUE
+    public static double leftWedgeDown = 0.79;
+    public static double leftWedgeUp = 0.1;
     public static double rightWedgeDown = 0.6;  // TEMPORARY VALUE
     public static double rightWedgeUp = 0;   // TEMPORARY VALUE
     public static double flowerWedgeDebounceSeconds = 0.5;
@@ -98,8 +99,19 @@ public class Intake {
     public static double transferStallMilliamps = 5000;   // transfer current above this while intaking = it's full
     public static int stallCheckEveryLoops = 5;           // current isn't in the bulk read, so don't read it every loop
 
+    // -------------- Auto stall check (update(boolean)) --------------
+    // In INTAKE / POWER_SHOOTER the transfer runs at semiTransferring (0.18), so it can't reach the teleop 5000 mA:
+    // a stalled motor at 0.18 power draws roughly 0.18 x its full stall current. Robot.update(Pose) clears the
+    // "full" flag after every path (resetTransferStall), and SHOOT / OUTTAKE clear it too.
+    public static double autoTransferStallMilliamps = 4000; // TEMPORARY VALUE: check "Transfer current" telemetry
+    public static double stallIgnoreMs = 250; // ignore the current spike when the transfer (re)starts
+
+    @IgnoreConfigurable public static double lastTransferMilliamps = 0; // last current read by the auto stall check
+
     private boolean transferFull = false;
     private int stallCheckCount = 0;
+    private final ElapsedTime transferRunTime = new ElapsedTime(); // since the transfer last started running
+    private boolean transferWasRunning = false;
 
 
 
@@ -167,16 +179,18 @@ public class Intake {
 
         switch (Robot.transportState) {
             case HOME:
+                transferFull = false;
                 intakePower = dormant;
                 transferPower = dormant;
                 blockerPosition = blockerClosed;
                 break;
             case INTAKE:
                 intakePower = intaking;
-                transferPower = semiTransferring;
+                transferPower = autoTransferWithStallCheck(semiTransferring);
                 blockerPosition = blockerClosed;
                 break;
             case OUTTAKE:
+                transferFull = false;
                 intakePower = outtaking;
                 transferPower = outtaking;
                 blockerPosition = blockerClosed;
@@ -184,10 +198,11 @@ public class Intake {
             case POWER_SHOOTER:
                 // Intake and transfer off while the flywheel first spins up at the start of auto (preload shot)
                 intakePower = Robot.preloadSpinUp ? dormant : intaking;
-                transferPower = Robot.preloadSpinUp ? dormant : semiTransferring;
+                transferPower = Robot.preloadSpinUp ? dormant : autoTransferWithStallCheck(semiTransferring);
                 blockerPosition = blockerClosed;
                 break;
             case SHOOT:
+                transferFull = false; // emptying, so no stall check
                 intakePower = intaking;
                 transferPower = intaking;
                 blockerPosition = blockerOpen;
@@ -199,6 +214,30 @@ public class Intake {
         transferMotor.setPower(transferPower);
         transferPollenBlocker.setPosition(blockerPosition);
         //transferNectar.setPosition(blockerPosition);
+        transferWasRunning = transferPower > 0.1;
+    }
+
+    /**
+     * Auto transfer power with the stall check: runPower until the transfer current (read every
+     * stallCheckEveryLoops calls, not in the first stallIgnoreMs after it starts) goes over
+     * autoTransferStallMilliamps, then 0 until resetTransferStall() / SHOOT / OUTTAKE.
+     */
+    private double autoTransferWithStallCheck(double runPower) {
+        if (transferFull) return 0;
+        if (!transferWasRunning) transferRunTime.reset(); // starting up this loop
+
+        stallCheckCount = (stallCheckCount + 1) % stallCheckEveryLoops;
+        if (stallCheckCount == 0 && transferRunTime.milliseconds() > stallIgnoreMs) {
+            lastTransferMilliamps = transferMotor.getCurrent(CurrentUnit.MILLIAMPS);
+            if (lastTransferMilliamps > autoTransferStallMilliamps) transferFull = true;
+        }
+        return transferFull ? 0 : runPower;
+    }
+
+    /** Clears the "transfer full" flag, so the transfer runs again (and is re-checked). Robot calls this after every auto path. */
+    public void resetTransferStall() {
+        transferFull = false;
+        stallCheckCount = 0;
     }
 
     // -------------- TELEOP UPDATE METHOD --------------
@@ -225,6 +264,7 @@ public class Intake {
 
         switch (Robot.transportState) {
             case HOME:
+
                 intakePower = dormant;
                 transferPower = dormant;
                 blockerPosition = blockerClosed;

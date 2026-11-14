@@ -7,6 +7,7 @@ import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inA
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerPathTimeout;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
@@ -22,6 +23,7 @@ import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.*;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.groups.Groups.parallel;
+import static com.pedropathing.ivy.groups.Groups.race;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -55,15 +57,15 @@ public class RedSolo2Flower extends LinearOpMode {
     }
 
     private final Pose start = pose(58, 8, 90);
-    private final Pose shootPreload = pose(58, 20, 135); // preload shot spot, driven to while the flywheel spins up
-    private final Pose intakeAllianceFlower = pose(14.6, 48, 180);
+    private final Pose shootPreload = pose(58, 16, 135); // preload shot spot, driven to while the flywheel spins up
+    private final Pose intakeAllianceFlower = pose(15.7, 48, 180);
     private final Pose intakeAllianceFlowerControl1 = pose(32, 49, 0);
     private final Pose shootLeft1Start = pose(11.8235, 46.9519, 180);
-    private final Pose shootLeft1 = pose(47.1667, 115, 60);
+    private final Pose shootLeft1 = pose(44.5, 124, 60);
     private final Pose shootLeft1Control1 = pose(32.4282, 44.863, 0);
     private final Pose shootLeft1Control2 = pose(24.7852, 95.1585, 0);
-    private final Pose intakeLeftFlower = pose(47.1667, 129.5, 90);
-    private final Pose shootLeft2 = pose(47.1667, 115, 60);
+    private final Pose intakeLeftFlower = pose(50, 128.7, 90);
+    private final Pose shootLeft2 = pose(44.5, 124, 60);
     private final Pose shootLeft2Segment1Heading = pose(47.1667, 115, 90);
     private final Pose shootLeft2Segment2Start = pose(47.1667, 115, 90);
     private final Pose shootLeft2Segment2End = pose(47.1667, 115, 60);
@@ -93,23 +95,21 @@ public class RedSolo2Flower extends LinearOpMode {
                 waitMs(200),
                 waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                waitMs(1000),
+                waitMs(2000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
                 // Both flower shots go to the LEFT goal (set now, so the turret / Limelight pipeline switch while driving)
                 instant(() -> GoalTargets.leftSide = true),
+                instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                waitMs(300),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
-                follow(follower, intakeAllianceFlower()),
+                // Path into the flower, given up after flowerPathTimeout if it doesn't reach the end
+                race(follow(follower, intakeAllianceFlower()), waitMs(flowerPathTimeout)),
                 waitMs(flowerIntakeWait), // keep intaking at the flower
 
-                parallel(
-                        follow(follower, shootLeft1()),
-                        sequential(
-                                waitMs(1000),
-                                instant(() -> Robot.flowerWedgeIsActive = false)
-                        )
-                ),
+                follow(follower, shootLeft1()),
+
                 waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
@@ -117,7 +117,8 @@ public class RedSolo2Flower extends LinearOpMode {
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
 
-                follow(follower, intakeLeftFlower()),
+                // Path into the flower, given up after flowerPathTimeout if it doesn't reach the end
+                race(follow(follower, intakeLeftFlower()), waitMs(flowerPathTimeout)),
                 waitMs(flowerIntakeWait), // keep intaking at the flower
 
                 parallel(
@@ -147,7 +148,9 @@ public class RedSolo2Flower extends LinearOpMode {
         follower = robot.getFollower();
         follower.setPose(start);
         follower.update();
-
+        GoalTargets.redRightY = 62;
+        GoalTargets.redLeftY = 90;
+        //GoalTargets.redLeftX = 61;
         startPose = follower.pose();
         FollowerPose.update(follower.pose());
 
