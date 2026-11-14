@@ -13,9 +13,9 @@ import com.bylazar.configurables.annotations.IgnoreConfigurable;
  */
 @Configurable
 public class GoalTargets {
-    public static double redRightX = 58;
+    public static double redRightX = 60;
     public static double redRightY = 58;
-    public static double redLeftX = 62.0;
+    public static double redLeftX = 54.0;
     public static double redLeftY = 83;
     public static double fieldWidth = 141.5; // inches
 
@@ -37,8 +37,8 @@ public class GoalTargets {
     // -------------- Relocalize pose --------------
     // Where the robot is when the driver presses share in the competition teleops (field inches, heading in degrees).
     // Red is tuned, blue is mirrored: x -> fieldWidth - x, heading -> 180 - heading.
-    public static double redRelocalizeX = 8;
-    public static double redRelocalizeY = 72;
+    public static double redRelocalizeX = 7;
+    public static double redRelocalizeY = 70.75;
     public static double redRelocalizeHeading = 0;
 
     public static double relocalizeX() {

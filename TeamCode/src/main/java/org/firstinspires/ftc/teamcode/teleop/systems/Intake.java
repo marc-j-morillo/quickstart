@@ -67,8 +67,8 @@ public class Intake {
     public static double blockerClosed = 0.85;
 
     //FLOWER WEDGE POSITIONS (each servo has its own; find them with FlowerWedgeTest, which edits these)
-    public static double leftWedgeDown = 0.61;   // TEMPORARY VALUE
-    public static double leftWedgeUp = 0;    // TEMPORARY VALUE
+    public static double leftWedgeDown = 0.8;   // TEMPORARY VALUE
+    public static double leftWedgeUp = 0.1;    // TEMPORARY VALUE
     public static double rightWedgeDown = 0.6;  // TEMPORARY VALUE
     public static double rightWedgeUp = 0;   // TEMPORARY VALUE
     public static double flowerWedgeDebounceSeconds = 0.5;
@@ -93,7 +93,7 @@ public class Intake {
     // own state machine instead of update(). Separate powers from the transport-state ones above, which autos use.
     public static double directIntakePower = .9;
     public static double directIntakeTransferPower = .8; // transfer while intaking (stops when it stalls)
-    public static double directFeedTransferPower = .65;     // transfer while shooting (no stall check)
+    public static double directFeedTransferPower = .57;     // transfer while shooting (no stall check)
     public static double directOuttakePower = -1;
     public static double transferStallMilliamps = 5000;   // transfer current above this while intaking = it's full
     public static int stallCheckEveryLoops = 5;           // current isn't in the bulk read, so don't read it every loop
@@ -182,8 +182,9 @@ public class Intake {
                 blockerPosition = blockerClosed;
                 break;
             case POWER_SHOOTER:
-                intakePower = intaking;
-                transferPower = semiTransferring;
+                // Intake and transfer off while the flywheel first spins up at the start of auto (preload shot)
+                intakePower = Robot.preloadSpinUp ? dormant : intaking;
+                transferPower = Robot.preloadSpinUp ? dormant : semiTransferring;
                 blockerPosition = blockerClosed;
                 break;
             case SHOOT:

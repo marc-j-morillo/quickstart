@@ -5,6 +5,10 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.Paths;
@@ -27,6 +31,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 @Autonomous(name = "RedSolo2Flower", group = "Autonomous")
@@ -38,48 +43,65 @@ public class RedSolo2Flower extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(58, 8, 90);
-    private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
-    private final Pose shootLeft1Start = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
-    private final Pose shootLeft1Control1 = poseFactory.of(32.4282, 44.863, 0);
-    private final Pose shootLeft1Control2 = poseFactory.of(24.7852, 95.1585, 0);
-    private final Pose intakeLeftFlower = poseFactory.of(47.1667, 129.6765, 90);
-    private final Pose shootLeft2 = poseFactory.of(47.1667, 115, 60);
-    private final Pose shootLeft2Segment1Heading = poseFactory.of(47.1667, 115, 90);
-    private final Pose shootLeft2Segment2Start = poseFactory.of(47.1667, 115, 90);
-    private final Pose shootLeft2Segment2End = poseFactory.of(47.1667, 115, 60);
-    private final Pose moveToGarden = poseFactory.of(27.1281, 24.1733, -89.0918);
-    private final Pose moveToGardenControl1 = poseFactory.of(25.9496, 98.5156, 0);
-    private final Pose moveToGardenSegment1Start = poseFactory.of(27.1281, 24.1733, 60);
-    private final Pose moveToGardenSegment1End = poseFactory.of(27.1281, 24.1733, -100);
-    private final Pose intakeGarden = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenControl1 = poseFactory.of(29.6504, 8, 0);
-    private final Pose intakeGardenSegment1Start = poseFactory.of(7.694, 6.7067, -90);
-    private final Pose intakeGardenSegment1End = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenSegment2Heading = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose shootGardenStart = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose shootGarden = poseFactory.of(60, 20, 192);
-    private final Pose park = poseFactory.of(15, 90, 90);
-    private final Pose parkControl1 = poseFactory.of(11.4339, 56.772, 0);
-    private final Pose parkSegment1Start = poseFactory.of(15, 90, 192);
-    private final Pose parkSegment1End = poseFactory.of(15, 90, 125);
-    private final Pose parkSegment3Start = poseFactory.of(15, 90, 89.7178);
-    private final Pose parkSegment3End = poseFactory.of(15, 90, 90);
+    // Blue copies extend this class and override isRedAlliance(). Every pose below is the red one, mirrored for blue
+    // (x -> fieldWidth - x, heading -> 180 - heading, same as GoalTargets), so blue stays an exact copy of red.
+    protected boolean isRedAlliance() {
+        return true;
+    }
+
+    private Pose pose(double x, double y, double headingDeg) {
+        if (isRedAlliance()) return poseFactory.of(x, y, headingDeg);
+        return poseFactory.of(GoalTargets.fieldWidth - x, y, 180 - headingDeg);
+    }
+
+    private final Pose start = pose(58, 8, 90);
+    private final Pose shootPreload = pose(58, 20, 135); // preload shot spot, driven to while the flywheel spins up
+    private final Pose intakeAllianceFlower = pose(14.6, 48, 180);
+    private final Pose intakeAllianceFlowerControl1 = pose(32, 49, 0);
+    private final Pose shootLeft1Start = pose(11.8235, 46.9519, 180);
+    private final Pose shootLeft1 = pose(47.1667, 115, 60);
+    private final Pose shootLeft1Control1 = pose(32.4282, 44.863, 0);
+    private final Pose shootLeft1Control2 = pose(24.7852, 95.1585, 0);
+    private final Pose intakeLeftFlower = pose(47.1667, 129.5, 90);
+    private final Pose shootLeft2 = pose(47.1667, 115, 60);
+    private final Pose shootLeft2Segment1Heading = pose(47.1667, 115, 90);
+    private final Pose shootLeft2Segment2Start = pose(47.1667, 115, 90);
+    private final Pose shootLeft2Segment2End = pose(47.1667, 115, 60);
+    private final Pose moveToGarden = pose(27.1281, 24.1733, -89.0918);
+    private final Pose moveToGardenControl1 = pose(25.9496, 98.5156, 0);
+    private final Pose moveToGardenSegment1Start = pose(27.1281, 24.1733, 60);
+    private final Pose moveToGardenSegment1End = pose(27.1281, 24.1733, -100);
+    private final Pose intakeGarden = pose(7.694, 6.7067, 180);
+    private final Pose intakeGardenControl1 = pose(29.6504, 8, 0);
+    private final Pose intakeGardenSegment1Start = pose(7.694, 6.7067, -90);
+    private final Pose intakeGardenSegment1End = pose(7.694, 6.7067, 180);
+    private final Pose intakeGardenSegment2Heading = pose(7.694, 6.7067, 180);
+    private final Pose shootGardenStart = pose(7.694, 6.7067, 180);
+    private final Pose shootGarden = pose(60, 20, 192);
+    private final Pose park = pose(15, 90, 90);
+    private final Pose parkControl1 = pose(11.4339, 56.772, 0);
+    private final Pose parkSegment1Start = pose(15, 90, 192);
+    private final Pose parkSegment1End = pose(15, 90, 125);
+    private final Pose parkSegment3Start = pose(15, 90, 89.7178);
+    private final Pose parkSegment3End = pose(15, 90, 90);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                follow(follower, moveToShootPreload()), // flywheel spins up on the way (intake off)
                 waitMs(200),
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitMs(1000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
+                // Both flower shots go to the LEFT goal (set now, so the turret / Limelight pipeline switch while driving)
+                instant(() -> GoalTargets.leftSide = true),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 follow(follower, intakeAllianceFlower()),
+                waitMs(flowerIntakeWait), // keep intaking at the flower
 
                 parallel(
                         follow(follower, shootLeft1()),
@@ -88,6 +110,7 @@ public class RedSolo2Flower extends LinearOpMode {
                                 instant(() -> Robot.flowerWedgeIsActive = false)
                         )
                 ),
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
@@ -95,32 +118,21 @@ public class RedSolo2Flower extends LinearOpMode {
                 instant(() -> Robot.flowerWedgeIsActive = true),
 
                 follow(follower, intakeLeftFlower()),
+                waitMs(flowerIntakeWait), // keep intaking at the flower
 
                 parallel(
                         follow(follower, shootLeft2()),
                         sequential(
                                 waitMs(500),
-                                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                                instant(() -> Robot.flowerWedgeIsActive = false),
-                                waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(waitAfterShoot)
+                                instant(() -> Robot.flowerWedgeIsActive = false)
                         )
                 ),
-                follow(follower, moveToGarden()),
+                waitMs(waitBeforeShoot),
+                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+                waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
+                waitMs(waitAfterShoot),
 
-                instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
-                follow(follower, intakeGarden()),
-
-                parallel(
-                        follow(follower, shootGarden()),
-                        sequential(
-                                waitMs(700),
-                                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                                waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(waitAfterShoot)
-                        )
-                ),
-
+                // Third shot done (preload, flower, flower): park. The garden paths below are unused for now.
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
                 follow(follower, park())
         );
@@ -129,7 +141,7 @@ public class RedSolo2Flower extends LinearOpMode {
     @Override
     public void runOpMode() {
         inAuto = true;
-        isRed = true;
+        isRed = isRedAlliance();
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = robot.getFollower();
@@ -166,8 +178,13 @@ public class RedSolo2Flower extends LinearOpMode {
         Robot.transportState = Robot.TransportState.HOME;
     }
 
+    public Path moveToShootPreload() {
+        return line(start, shootPreload).linear(start, shootPreload);
+    }
+
     public Path intakeAllianceFlower() {
-        return Paths.curve(start, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(start, intakeAllianceFlower);
+        return Paths.curve(shootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(shootPreload, intakeAllianceFlower, flowerHeadingEnd)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootLeft1() {
@@ -175,7 +192,8 @@ public class RedSolo2Flower extends LinearOpMode {
     }
 
     public Path intakeLeftFlower() {
-        return Paths.line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower);
+        return Paths.line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootLeft2() {
@@ -194,7 +212,13 @@ public class RedSolo2Flower extends LinearOpMode {
         return Paths.line(shootGardenStart, shootGarden).linear(shootGardenStart, shootGarden);
     }
 
+    /** Park straight from the second flower shot (shootLeft2). */
     public Path park() {
+        return Paths.line(shootLeft2, park).linear(shootLeft2, park);
+    }
+
+    /** The old park from the garden shot, unused while the auto parks after the second flower. */
+    public Path parkFromGarden() {
         return Paths.curve(shootGarden, parkControl1, park).heading(Interpolator.piecewise().until(0.3593, Interpolator.linear(parkSegment1Start, parkSegment1End)).until(0.9498, Interpolator.tangent).until(1, Interpolator.linear(parkSegment3Start, parkSegment3End)));
     }
 }

@@ -6,6 +6,10 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.PoseFactory;
@@ -27,6 +31,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 @Autonomous(name = "RedDuoRight", group = "Autonomous")
@@ -36,35 +41,49 @@ public class RedDuoRight extends LinearOpMode{
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(35.0422, 8.4494, 90);
-    private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
-    private final Pose shoot2 = poseFactory.of(60, 20, 180);
-    private final Pose intakeGarden = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenControl1 = poseFactory.of(42.1188, 6.843, 0);
-    private final Pose shootGarden = poseFactory.of(60, 20, 145);
-    private final Pose park = poseFactory.of(15, 90, 90);
-    private final Pose parkControl1 = poseFactory.of(11.0068, 52.7803, 0);
-    private final Pose parkSegment2Start = poseFactory.of(15, 90, 88.147);
-    private final Pose parkSegment2End = poseFactory.of(15, 90, 90);
+    // Blue copies extend this class and override isRedAlliance(). Every pose below is the red one, mirrored for blue
+    // (x -> fieldWidth - x, heading -> 180 - heading, same as GoalTargets), so blue stays an exact copy of red.
+    protected boolean isRedAlliance() {
+        return true;
+    }
+
+    private Pose pose(double x, double y, double headingDeg) {
+        if (isRedAlliance()) return poseFactory.of(x, y, headingDeg);
+        return poseFactory.of(GoalTargets.fieldWidth - x, y, 180 - headingDeg);
+    }
+
+    private final Pose start = pose(35.0422, 8.4494, 90);
+    private final Pose intakeAllianceFlower = pose(11.8235, 46.9519, 180);
+    private final Pose intakeAllianceFlowerControl1 = pose(25.1704, 47.4704, 0);
+    private final Pose shoot2 = pose(60, 20, 180);
+    private final Pose intakeGarden = pose(7.694, 6.7067, 180);
+    private final Pose intakeGardenControl1 = pose(42.1188, 6.843, 0);
+    private final Pose shootGarden = pose(60, 20, 145);
+    private final Pose park = pose(15, 90, 90);
+    private final Pose parkControl1 = pose(11.0068, 52.7803, 0);
+    private final Pose parkSegment2Start = pose(15, 90, 88.147);
+    private final Pose parkSegment2End = pose(15, 90, 90);
 
 
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 follow(follower, intakeAllianceFlower()),
+                waitMs(flowerIntakeWait), // keep intaking at the flower
 
 
                 follow(follower, shoot2()),
                 instant(() -> Robot.flowerWedgeIsActive = false),
 
                 waitMs(8000), // TEMPORARY VALUE
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
@@ -72,15 +91,11 @@ public class RedDuoRight extends LinearOpMode{
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 follow(follower, intakeGarden()),
 
-                parallel(
-                        follow(follower, shootGarden()),
-                        sequential(
-                                waitMs(700),
-                                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                                waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                                waitMs(waitAfterShoot)
-                        )
-                ),
+                follow(follower, shootGarden()),
+                waitMs(waitBeforeShoot),
+                instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+                waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
+                waitMs(waitAfterShoot),
 
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
                 follow(follower, park())
@@ -90,7 +105,7 @@ public class RedDuoRight extends LinearOpMode{
     @Override
     public void runOpMode() {
         inAuto = true;
-        isRed = true;
+        isRed = isRedAlliance();
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = robot.getFollower();
@@ -128,7 +143,8 @@ public class RedDuoRight extends LinearOpMode{
 
 
     public Path intakeAllianceFlower() {
-        return curve(start, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(start, intakeAllianceFlower);
+        return curve(start, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(start, intakeAllianceFlower, flowerHeadingEnd)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shoot2() {

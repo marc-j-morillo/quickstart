@@ -65,9 +65,34 @@ angle and LUT distance come from the Limelight; anywhere else, odometry as befor
 - Goal point = tag + (goal point - tag) offset rotated by heading + turret angle; tag positions default to the
   GoalTargets points (offset 0 = aim straight at the tag).
 - Falls back to odometry if the frame is older than 120 ms or the Limelight disagrees with odometry by > 25 deg.
-- Placeholders to set: hardware name `limelight`, pipeline 0 (needs the right tag size), tag IDs (-1 = any),
+- Camera is tilted: tag position comes from the Limelight robot-space pose (`useRobotSpacePose`, default), with the
+  camera pose entered in the Limelight web UI relative to the turret's rotation center ("robot forward" = turret
+  forward). Docs say robot space +y = right; check "tag forward / left" telemetry with a tag on the left, else
+  `flipRobotSpaceSide`. Level-camera path (camera space + tx + cameraForward/Left/Yaw) kept for `useRobotSpacePose = false`.
+- With the turret encoder (below) the turret angle at the frame is the measured one, no `servoLagMs` guess
+  (`useTurretEncoder`, telemetry `turretAngleSource`).
+- Pipeline per alliance/side, switched automatically (only on change; frames from the old pipeline are ignored):
+  red right 0, red left 1, blue right 2, blue left 3 (`redRightPipeline` etc.). All 4 need setting up in the web UI.
+- Default mode is point of interest (`usePointOfInterest`, 2026-11-14): each pipeline = AprilTag + ID filter + POI
+  offset to the goal point. Bearing from tx; distance computed in code from ty:
+  (poiHeightIn - cameraHeightIn) / tan(cameraPitchDeg + ty). Heights / pitch are placeholders (12 in, 20 deg, 40 in).
+  The two 3D-pose modes are still there with `usePointOfInterest = false`.
+- Placeholders to set: hardware name `limelight`, the 4 pipelines (need the right tag size), tag IDs (-1 = any),
   tag field positions, camera offset/yaw on the turret, both zones. Calibrate in the LUT test: right after a
   relocalize, Limelight vs odometry turret angle / distance telemetry should agree.
+
+## Turret encoder (branch `shoot-on-the-move`, untested on the robot)
+Analog absolute encoder geared 4:1 to the turret (4 encoder turns = 1 turret turn), read by `TurretPollen` (servo
+mode stays; the encoder only measures). Analog Input `turretEncoder`, optional (`tryGet`).
+- The encoder is only absolute within 90 turret deg. The turn is counted from wraps between loops and re-picked as
+  the one closest to the servo command once the command has been still `settleMs` (300 ms), so miscounts fix
+  themselves when the turret stops. Needs the servo within 45 deg of its command when still, and the turret
+  turning < 45 deg per loop (600 deg/s at a 75 ms loop).
+- `getMeasuredAngle()` (NaN until the turn is known), `Shooter.turretMeasuredAnglePollen`, LUT test telemetry.
+- Set up in TurretServoTuner: check direction (`encoderReversed`), point forward, back = zero (`encoderOffsetDegrees`),
+  copy both into the code. Voltage range defaults 0-3.3 V (`encoderMin/MaxVoltage`).
+- Not used yet for anything but the Limelight. Could later correct the servo command (closed loop on top of the
+  servo) or confirm the turret is on target before firing.
 
 ## Next up
 - Limelight: mount/configure, set tag IDs, tag positions and zones, compare with odometry in the LUT test.
@@ -92,3 +117,23 @@ angle and LUT distance come from the Limelight; anywhere else, odometry as befor
   in CompetitionTeleop and the LUT test. Simulated on the desktop, untested on the robot.
 - 2026-11-09: Limelight aim override (LimelightAim) on `shoot-on-the-move`: turret angle + LUT distance from the
   turret-mounted Limelight inside per-side zones. Builds; untested on the robot (all settings are placeholders).
+- 2026-11-13: Turret encoder (4:1 analog absolute) read by TurretPollen; LimelightAim uses the measured turret angle
+  when there is one; zero/direction setup in TurretServoTuner. LimelightAim switched to the robot-space tag pose
+  (tilted camera, camera pose set in the Limelight UI). Builds; untested on the robot.
+- 2026-11-13: Shooter motor directions moved into the configs (`shooter1Inverted` / `shooter2Inverted`, re-applied
+  on a config switch). UnderShooter reverses shooter2 (not inverted); CRShooter unchanged (both inverted). Untested on the robot.
+- 2026-11-13: Autos: `waitBeforeShoot` (1000 ms) before every shot, `waitAfterShoot` 2000 ms, no shooting during paths;
+  intake + transfer off while the flywheel spins up for the preload (`Robot.preloadSpinUp`). Untested on the robot.
+- 2026-11-14: Blue autos (BlueDuoLeft/Right, BlueSolo2Flower, ShootPreloadBlue(_Reset), ShootPreload_Left_Blue) extend
+  the red ones with `isRedAlliance() = false`; every pose goes through `pose()`, which mirrors for blue. Edit only the
+  red file. TestAuto has no blue copy. LimelightAim pipelines 0/1 red, 2/3 blue. Builds; untested on the robot.
+- 2026-11-14: Autos: flower intakes hold `flowerIntakeWait` (3 s) at the flower, run at `flowerIntakeSpeed` (0.5, Foresight
+  `maxPathSpeed` modifier per path) and finish turning at `flowerHeadingEnd` (75%). Solo / ShootPreload / TestAuto drive
+  to (58, 20, 135) for the preload while the flywheel spins up (in auto it's always at LUT speed). RedSolo2Flower aims
+  LEFT after the preload and parks after the 3rd shot (garden paths unused). Comp teleop starts at the auto end pose,
+  else 70.75, 70.75, 0 (was hard-coded 15, 90, 90); shows the odometry pose in telemetry. LUT test: Limelight lines
+  replaced by the pose. Untested on the robot.
+- 2026-11-14 open: Pinpoint heading runs away after ~2 min of teleop (hardware: check `FAULT_IMU_RUNAWAY`, static,
+  heat, cable; firmware). Turret has a ~20 deg dead spot on direction reversal even with SOTM / Limelight / smoothing
+  off (suspect the two servos fighting: test one servo / TurretServoTuner jog). Pedro pod offsets in Constants were
+  changed to (2.36, -5.5) from the tuned (2.845, -6.321): confirm with PinpointTuner.

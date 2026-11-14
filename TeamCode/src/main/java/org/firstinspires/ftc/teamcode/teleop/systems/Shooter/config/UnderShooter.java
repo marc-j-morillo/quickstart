@@ -23,20 +23,24 @@ public class UnderShooter {
         values.turretNectarYOffset = 0.0;
         values.turretWrapBias = 10;
 
+        // -------------- Flywheel motors --------------
+        values.shooter1Inverted = true;
+        values.shooter2Inverted = false; // reversed from CRShooter
+
         // -------------- Flywheel PIDF --------------
         values.shooterP = .002654;
         values.shooterI = 0;
         values.shooterD = 0;
-        values.kV = .000325;
-        values.kS = .032;
+        values.kV = .00037;
+        values.kS = .04;
 
         values.notShootingTolerance = 50;
         values.poweringTolerance = 40;
-        values.shootingTolerance = 150;
+        values.shootingTolerance = 40;
 
         // -------------- Flywheel speed --------------
         values.velocityRounding = 10;
-        values.idleVelocity = 2880; // 1.8x CRShooter's 1600
+        values.idleVelocity = 1800;
         values.flywheelTicksPerRev = 28;
 
         // -------------- Shot table --------------
@@ -46,48 +50,48 @@ public class UnderShooter {
         };
         // 1.8x CRShooter's speeds
         values.lutVelocities = new double[]{
-                2988, //  0 in (empty slot, ignored)
-                2988, // 20 in
-                2988, // 25 in
-                2988, // 30 in
-                3024, // 35 in
-                3024, // 40 in
-                3060, // 45 in
-                3105, // 50 in
-                3150, // 55 in
-                3177, // 60 in
-                3204, // 65 in
-                3222, // 70 in
+                1800, //  0 in (empty slot, ignored)
+                1800, // 20 in
+                1825, // 25 in
+                1850, // 30 in
+                1875, // 35 in
+                1900, // 40 in
+                1925, // 45 in
+                1950, // 50 in
+                1967, // 55 in
+                1980, // 60 in
+                2000, // 65 in
+                2000, // 70 in
         };
         values.lutHoods = new double[]{
-                0, //  0 in (empty slot, ignored)
-                0, // 20 in
-                0.05, // 25 in
-                0.075, // 30 in
-                0.15, // 35 in
-                0.18, // 40 in
-                0.22, // 45 in
-                0.25, // 50 in
-                0.275, // 55 in
-                0.3, // 60 in
-                0.325, // 65 in
-                0.35, // 70 in
+                .7, //  0 in (empty slot, ignored)
+                .7, // 20 in
+                0.47, // 25 in
+                0.4, // 30 in
+                0.34, // 35 in
+                0.28, // 40 in
+                0.3, // 45 in
+                0.22, // 50 in
+                0.16, // 55 in
+                0.12, // 60 in
+                0.10, // 65 in
+                0.05, // 70 in
         };
 
         values.useShootingKpLut = true;
         values.lutShootingKps = new double[]{
-                0.00265, //  0 in (empty slot, ignored)
-                0.00265, // 20 in
-                0.00265, // 25 in
-                0.00265, // 30 in
-                0.00265, // 35 in
-                0.00265, // 40 in
-                0.00265, // 45 in
-                0.00265, // 50 in
-                0.00265, // 55 in
-                0.00265, // 60 in
-                0.00265, // 65 in
-                0.00265, // 70 in
+                0.008, //  0 in (empty slot, ignored)
+                0.008, // 20 in
+                0.008, // 25 in
+                0.008, // 30 in
+                0.008, // 35 in
+                0.008, // 40 in
+                0.01, // 45 in
+                0.01, // 50 in
+                0.01, // 55 in
+                0.01, // 60 in
+                0.012, // 65 in
+                0.012, // 70 in
         };
 
         values.velocityTrim = 0;
