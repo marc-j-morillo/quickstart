@@ -47,9 +47,10 @@ import java.util.List;
  * gamepad2 (operator), also works during init:
  *   start ....................... relocalize to the GoalTargets relocalize pose (configurable, blue mirrored)
  *   right bumper / left bumper .. flywheel offset +10 / -10 rpm
+ *   right trigger / left trigger  hood offset +0.01 / -0.01 (servo position, added to the LUT hood)
  *   dpad right / dpad left ...... turret offset 3 degrees right / left
  *   dpad up ..................... heading only: back against a wall, facing +y (heading = 90 deg)
- *   a ........................... reset all offsets to 0
+ *   a ........................... reset all offsets to 0 (turret, rpm, hood)
  *   y ........................... toggle the flower wedge up / down (positions: Intake left/right WedgeUp / WedgeDown)
  *
  * Loop time: manual bulk reads (one read per hub per loop), battery voltage read every
@@ -66,6 +67,7 @@ public abstract class CompetitionTeleop extends OpMode {
     // ------------- DRIVER ADJUSTMENTS -------------
     public static final double turretOffsetStepDeg = 3;
     public static final double rpmOffsetStep = 10;
+    public static final double hoodOffsetStep = 0.01;
     public static final double wallHeadingDeg = 90; // gamepad2 dpad up: back against a wall, facing +y
     public static final double triggerThreshold = 0.1;
 
@@ -78,6 +80,8 @@ public abstract class CompetitionTeleop extends OpMode {
 
     private boolean rumbling = false;
     private boolean flowerWedgeDown = false;
+    // gamepad2 triggers are analog (no WasPressed), so track presses here: one step per pull
+    private boolean hoodUpHeld = false, hoodDownHeld = false;
 
     @Override
     public void init() {
@@ -98,6 +102,8 @@ public abstract class CompetitionTeleop extends OpMode {
                 FollowerPose.botX, FollowerPose.botY, FollowerPose.botHeading));
         telemetry.addData("Turret offset (deg)", () -> String.format("%+.0f", Shooter.turretAngleOffset));
         telemetry.addData("RPM offset", () -> String.format("%+.0f", Shooter.velocityOffsetRpm));
+        telemetry.addData("Hood offset / hood position", () -> String.format("%+.2f / %.2f",
+                Shooter.hoodOffset, Shooter.hoodPollenPosition));
         telemetry.addData("SOTM vel x/y (in/s) turn (deg/s)", () -> String.format("%.1f / %.1f / %.0f %s",
                 ShootOnTheMove.velX, ShootOnTheMove.velY, ShootOnTheMove.turnRate,
                 ShootOnTheMove.usingPinpoint ? "pinpoint" : "pose diff"));
@@ -183,16 +189,34 @@ public abstract class CompetitionTeleop extends OpMode {
         // ----- gamepad2: offsets -----
         if (gamepad2.rightBumperWasPressed()) Shooter.velocityOffsetRpm += rpmOffsetStep;
         if (gamepad2.leftBumperWasPressed()) Shooter.velocityOffsetRpm -= rpmOffsetStep;
+        if (triggerPulled(gamepad2.right_trigger, hoodUpHeld)) Shooter.hoodOffset += hoodOffsetStep;
+        if (triggerPulled(gamepad2.left_trigger, hoodDownHeld)) Shooter.hoodOffset -= hoodOffsetStep;
+        hoodUpHeld = triggerHeld(gamepad2.right_trigger, hoodUpHeld);
+        hoodDownHeld = triggerHeld(gamepad2.left_trigger, hoodDownHeld);
         // Turret angles are counterclockwise positive, so right is negative
         if (gamepad2.dpadRightWasPressed()) Shooter.turretAngleOffset -= turretOffsetStepDeg;
         if (gamepad2.dpadLeftWasPressed()) Shooter.turretAngleOffset += turretOffsetStepDeg;
         if (gamepad2.aWasPressed()) {
             Shooter.turretAngleOffset = 0;
             Shooter.velocityOffsetRpm = 0;
+            Shooter.hoodOffset = 0;
         }
 
         // ----- gamepad2: flower wedge (the servos are set in loop()) -----
         if (gamepad2.yWasPressed() || gamepad1.yWasPressed()) flowerWedgeDown = !flowerWedgeDown;
+    }
+
+    /**
+     * Trigger as a button: held past 0.5, released below 0.3. The gap stops a trigger resting near one value from
+     * counting as many presses.
+     */
+    private static boolean triggerHeld(double trigger, boolean wasHeld) {
+        return wasHeld ? trigger > 0.3 : trigger > 0.5;
+    }
+
+    /** True on the loop the trigger becomes held (one step per pull). */
+    private static boolean triggerPulled(double trigger, boolean wasHeld) {
+        return !wasHeld && triggerHeld(trigger, false);
     }
 
     /** Rumbles gamepad1 the whole time `on` is true, only sending a command when it changes. */

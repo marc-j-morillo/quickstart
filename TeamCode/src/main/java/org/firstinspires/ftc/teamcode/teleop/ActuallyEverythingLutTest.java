@@ -395,6 +395,8 @@ public class ActuallyEverythingLutTest extends OpMode {
         telemetry.addData("Turret output (dpad down)", shooter.isTurretOutputEnabled() ? "ON" : "OFF");
         telemetry.addData("Turret servo target", Shooter.turretTargetPositionPollen);
         telemetry.addData("Hood target", Shooter.hoodPollenPosition);
+        telemetry.addData("Hood = LUT + trim + constant", "%.3f + %.3f + %.3f",
+                Shooter.lutHood, Shooter.config().hoodTrim, Shooter.hoodConstantAddition);
         telemetry.addData("In range (ready to fire)", shooter.inRange());
 
         telemetry.addLine("LUT LIMITS:");

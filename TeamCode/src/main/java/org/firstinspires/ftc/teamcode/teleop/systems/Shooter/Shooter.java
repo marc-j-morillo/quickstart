@@ -80,6 +80,11 @@ public class Shooter {
     // so one opmode's adjustments never leak into the next (e.g. teleop into the next auto).
     @IgnoreConfigurable public static double turretAngleOffset = 0; // degrees, + = counterclockwise (left)
     @IgnoreConfigurable public static double velocityOffsetRpm = 0; // rpm, added to the shooting speed
+    @IgnoreConfigurable public static double hoodOffset = 0;        // hood servo position, added to the LUT hood
+
+    // Constant hood addition (servo position), added to every hood command on top of the LUT hood, hoodTrim and
+    // hoodOffset, for both configs. Not baked into new LutTuner points, so tuned points stay right while it's on.
+    public static double hoodConstantAddition = 0.015;
 
     // Optional aim-point override (used by the test opmodes). When enabled, turret aim, hood angle and
     // flywheel velocity all use this field point (inches, same frame as botX/botY) instead of the goal.
@@ -143,6 +148,7 @@ public class Shooter {
 
         turretAngleOffset = 0;
         velocityOffsetRpm = 0;
+        hoodOffset = 0;
         GoalTargets.leftSide = false;
     }
 
@@ -228,7 +234,7 @@ public class Shooter {
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
 
-        hoodPollenPosition = HoodPollen.clamp(lutHood + config().hoodTrim);
+        hoodPollenPosition = HoodPollen.clamp(lutHood + config().hoodTrim + hoodConstantAddition + hoodOffset);
         hoodPollen.update(hoodPollenPosition);
     }
 

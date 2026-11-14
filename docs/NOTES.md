@@ -9,7 +9,7 @@ line to the log at the bottom.
   follower for driving + localization), Intake (direct-control methods), Shooter (`runLutFlywheel`), BatteryVoltage.
   - gamepad1: drive (field-centric), right trigger intake / shoot, left trigger outtake, right bumper holds the gate
     open (rumbles), x / b pick the LEFT / RIGHT goal, dpad down = heading reset, dpad up = relocalize to the goal point.
-  - gamepad2: start = relocalize pose, bumpers = rpm offset +/-10, dpad left/right = turret offset 3 deg,
+  - gamepad2: start = relocalize pose, bumpers = rpm offset +/-10, triggers = hood offset +/-0.01, dpad left/right = turret offset 3 deg,
     dpad up = heading 90 deg (back against a wall), a = reset offsets, y = flower wedge toggle.
   - Flywheel always targets the LUT speed. SHOOTING uses the per-distance kP table if `useShootingKpLut` is on.
 - Shooter settings live in `teleop/systems/Shooter/config/`: `CRShooter` (2 in wheel, CR 1:1, 2900 rpm output,
@@ -137,3 +137,6 @@ mode stays; the encoder only measures). Analog Input `turretEncoder`, optional (
   heat, cable; firmware). Turret has a ~20 deg dead spot on direction reversal even with SOTM / Limelight / smoothing
   off (suspect the two servos fighting: test one servo / TurretServoTuner jog). Pedro pod offsets in Constants were
   changed to (2.36, -5.5) from the tuned (2.845, -6.321): confirm with PinpointTuner.
+- 2026-11-14: HoodPanelsTest opmode (hood position from Panels). Comp teleop: gamepad2 triggers = hood offset
+  +/-0.01 (`Shooter.hoodOffset`, added to the LUT hood, reset by gamepad2 a). Untested on the robot.
+- 2026-11-14: `Shooter.hoodConstantAddition` = 0.015 added to every hood command (Panels, under Shooter). Untested on the robot.
