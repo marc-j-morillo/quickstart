@@ -94,6 +94,8 @@ public abstract class CompetitionTeleop extends OpMode {
         // Items are added once and their values are only computed when telemetry is actually sent
         telemetry.setAutoClear(false);
         telemetry.addData("Side", () -> GoalTargets.leftSide ? "LEFT" : "RIGHT");
+        telemetry.addData("Robot x / y (in) / heading (deg)", () -> String.format("%.1f / %.1f / %.1f",
+                FollowerPose.botX, FollowerPose.botY, FollowerPose.botHeading));
         telemetry.addData("Turret offset (deg)", () -> String.format("%+.0f", Shooter.turretAngleOffset));
         telemetry.addData("RPM offset", () -> String.format("%+.0f", Shooter.velocityOffsetRpm));
         telemetry.addData("SOTM vel x/y (in/s) turn (deg/s)", () -> String.format("%.1f / %.1f / %.0f %s",

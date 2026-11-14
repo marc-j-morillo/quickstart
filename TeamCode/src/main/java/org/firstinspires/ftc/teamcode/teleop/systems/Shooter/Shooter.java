@@ -43,6 +43,7 @@ public class Shooter {
 
     @IgnoreConfigurable public static double turretTargetAnglePollen;     // desired turret angle, degrees
     @IgnoreConfigurable public static double turretTargetPositionPollen;  // servo position actually commanded
+    @IgnoreConfigurable public static double turretMeasuredAnglePollen;   // turret encoder angle, degrees (NaN = none)
     @IgnoreConfigurable public static double turretTargetPositionNectar;
 
     // -------------- Settings --------------
@@ -50,7 +51,7 @@ public class Shooter {
     // hold a full set of values. activeConfig (Panels, under Shooter) picks the set the Shooter uses; switching it
     // applies on the next update. Read the active set in code with Shooter.config().
     public enum Config { CR_SHOOTER, UNDER_SHOOTER }
-    public static Config activeConfig = Config.CR_SHOOTER;
+    public static Config activeConfig = Config.UNDER_SHOOTER;
 
     /** The settings the Shooter is using right now (the set picked by activeConfig). */
     public static ShooterConfig config() {
@@ -222,7 +223,8 @@ public class Shooter {
         turretTargetAnglePollen = turretAngle + turretAngleOffset;
         turretPollen.aimAt(turretTargetAnglePollen);
         turretTargetPositionPollen = turretPollen.getCommandedPosition();
-        //limelightAim.record(turretPollen.getCommandedAngle(), botHeading);
+        turretMeasuredAnglePollen = turretPollen.getMeasuredAngle();
+        //limelightAim.record(turretPollen.getCommandedAngle(), turretMeasuredAnglePollen, botHeading);
         //turretTargetPositionNectar = turretTargetToGoal(false);
         //turretNectar.update(turretTargetPosition);
 

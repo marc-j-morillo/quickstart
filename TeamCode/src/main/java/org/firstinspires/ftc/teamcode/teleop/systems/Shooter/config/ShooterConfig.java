@@ -20,6 +20,12 @@ public class ShooterConfig {
     // the robot always resolves to the + side instead of flipping between +180 and -180 with localizer noise.
     public double turretWrapBias;
 
+    // -------------- Flywheel motors --------------
+    // Motor directions (shooter1 also gives the flywheel velocity, so with it flipped the speed would read negative).
+    // Applied when the Flywheel is created and whenever activeConfig switches.
+    public boolean shooter1Inverted;
+    public boolean shooter2Inverted;
+
     // -------------- Flywheel PIDF --------------
     public double shooterP, shooterI, shooterD, kV, kS;
 

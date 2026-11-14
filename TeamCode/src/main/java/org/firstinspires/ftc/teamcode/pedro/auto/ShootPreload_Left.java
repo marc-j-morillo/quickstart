@@ -17,6 +17,10 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -39,21 +43,35 @@ public class ShootPreload_Left extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(57, 7, 90);
-    private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
-    private final Pose shootLeft1Start = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
-    private final Pose shootLeft1Control1 = poseFactory.of(32.4282, 44.863, 0);
-    private final Pose shootLeft1Control2 = poseFactory.of(24.7852, 95.1585, 0);
-    private final Pose parkStart = poseFactory.of(47.1667, 115, 60);
-    private final Pose park = poseFactory.of(15, 90, 90);
+    // Blue copies extend this class and override isRedAlliance(). Every pose below is the red one, mirrored for blue
+    // (x -> fieldWidth - x, heading -> 180 - heading, same as GoalTargets), so blue stays an exact copy of red.
+    protected boolean isRedAlliance() {
+        return true;
+    }
+
+    private Pose pose(double x, double y, double headingDeg) {
+        if (isRedAlliance()) return poseFactory.of(x, y, headingDeg);
+        return poseFactory.of(GoalTargets.fieldWidth - x, y, 180 - headingDeg);
+    }
+
+    private final Pose start = pose(57, 7, 90);
+    private final Pose shootPreload = pose(58, 20, 135); // preload shot spot, driven to while the flywheel spins up
+    private final Pose intakeAllianceFlower = pose(11.8235, 46.9519, 180);
+    private final Pose intakeAllianceFlowerControl1 = pose(25.1704, 47.4704, 0);
+    private final Pose shootLeft1Start = pose(11.8235, 46.9519, 180);
+    private final Pose shootLeft1 = pose(47.1667, 115, 60);
+    private final Pose shootLeft1Control1 = pose(32.4282, 44.863, 0);
+    private final Pose shootLeft1Control2 = pose(24.7852, 95.1585, 0);
+    private final Pose parkStart = pose(47.1667, 115, 60);
+    private final Pose park = pose(15, 90, 90);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                follow(follower, moveToShootPreload()), // flywheel spins up on the way (intake off)
                 waitMs(200),
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitMs(1000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
@@ -61,6 +79,7 @@ public class ShootPreload_Left extends LinearOpMode {
                 instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
                 instant(() -> Robot.flowerWedgeIsActive = true),
                 follow(follower, intakeAllianceFlower()),
+                waitMs(flowerIntakeWait), // keep intaking at the flower
                 instant(() -> GoalTargets.leftSide = true),
                 parallel(
                         follow(follower, shootLeft1()),
@@ -71,6 +90,7 @@ public class ShootPreload_Left extends LinearOpMode {
                                 instant(() -> Robot.transportState = Robot.TransportState.HOME)
                         )
                 ),
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
                 waitMs(waitAfterShoot),
@@ -86,7 +106,7 @@ public class ShootPreload_Left extends LinearOpMode {
         resetStaticValues.resetStaticValues();
 
         inAuto = true;
-        isRed = true;
+        isRed = isRedAlliance();
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = robot.getFollower();
@@ -124,8 +144,13 @@ public class ShootPreload_Left extends LinearOpMode {
         Robot.transportState = Robot.TransportState.HOME;
     }
 
+    public Path moveToShootPreload() {
+        return line(start, shootPreload).linear(start, shootPreload);
+    }
+
     public Path intakeAllianceFlower() {
-        return Paths.curve(start, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(start, intakeAllianceFlower);
+        return Paths.curve(shootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(shootPreload, intakeAllianceFlower, flowerHeadingEnd)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootLeft1() {

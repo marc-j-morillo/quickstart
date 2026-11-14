@@ -142,8 +142,9 @@ public class Drive {
         setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
     }
 
+    /** Competition teleop start: the pose the last auto ended at (used once), or 70.75, 70.75, 0 deg if no auto ran. */
     public void setStartTeleOp() {
-        setPose(15, 90, 90);
+        follower.setPose(FollowerPose.takeStartPose());
     }
 
     public static double driverHeading() {

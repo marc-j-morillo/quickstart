@@ -16,6 +16,7 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -27,6 +28,7 @@ import org.firstinspires.ftc.teamcode.teleop.ResetStaticValues;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleop.systems.utils.GoalTargets;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.LoopTimer;
 
 @Autonomous(name = "ShootPreloadRed_Reset", group = "Autonomous")
@@ -36,40 +38,54 @@ public class ShootPreloadRed_Reset extends LinearOpMode {
     private Follower follower;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
-    private final Pose start = poseFactory.of(58, 7, 90);
-    private final Pose startAndShootPreload = poseFactory.of(54.0612, 8.2201, 90);
-    private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
-    private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
-    private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
-    private final Pose shootLeft1Control1 = poseFactory.of(32.4282, 44.863, 0);
-    private final Pose shootLeft1Control2 = poseFactory.of(24.7852, 95.1585, 0);
-    private final Pose intakeLeftFlower = poseFactory.of(47.1667, 129.6765, 90);
-    private final Pose shootLeft2 = poseFactory.of(47.1667, 115, 60);
-    private final Pose shootLeft2Segment1Heading = poseFactory.of(47.1667, 115, 90);
-    private final Pose shootLeft2Segment2Start = poseFactory.of(47.1667, 115, 90);
-    private final Pose shootLeft2Segment2End = poseFactory.of(47.1667, 115, 60);
-    private final Pose moveToGarden = poseFactory.of(27.1281, 24.1733, -89.1749);
-    private final Pose moveToGardenControl1 = poseFactory.of(25.9496, 98.5156, 0);
-    private final Pose moveToGardenSegment1Start = poseFactory.of(27.1281, 24.1733, 60);
-    private final Pose moveToGardenSegment1End = poseFactory.of(27.1281, 24.1733, -100);
-    private final Pose intakeGarden = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenControl1 = poseFactory.of(30.29, 7.694, 0);
-    private final Pose intakeGardenSegment1Start = poseFactory.of(7.694, 6.7067, -90);
-    private final Pose intakeGardenSegment1End = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose intakeGardenSegment2Heading = poseFactory.of(7.694, 6.7067, 180);
-    private final Pose shootGarden = poseFactory.of(60, 20, 192);
-    private final Pose park = poseFactory.of(15, 90, 90);
-    private final Pose parkControl1 = poseFactory.of(11.4339, 56.772, 0);
-    private final Pose parkSegment1Start = poseFactory.of(15, 90, 192);
-    private final Pose parkSegment1End = poseFactory.of(15, 90, 125);
-    private final Pose parkSegment3Start = poseFactory.of(15, 90, 87.7245);
-    private final Pose parkSegment3End = poseFactory.of(15, 90, 90);
+
+    // Blue copies extend this class and override isRedAlliance(). Every pose below is the red one, mirrored for blue
+    // (x -> fieldWidth - x, heading -> 180 - heading, same as GoalTargets), so blue stays an exact copy of red.
+    protected boolean isRedAlliance() {
+        return true;
+    }
+
+    private Pose pose(double x, double y, double headingDeg) {
+        if (isRedAlliance()) return poseFactory.of(x, y, headingDeg);
+        return poseFactory.of(GoalTargets.fieldWidth - x, y, 180 - headingDeg);
+    }
+    private final Pose start = pose(58, 7, 90);
+    private final Pose shootPreload = pose(58, 20, 135); // preload shot spot, driven to while the flywheel spins up
+    private final Pose startAndShootPreload = pose(54.0612, 8.2201, 90);
+    private final Pose intakeAllianceFlower = pose(11.8235, 46.9519, 180);
+    private final Pose intakeAllianceFlowerControl1 = pose(25.1704, 47.4704, 0);
+    private final Pose shootLeft1 = pose(47.1667, 115, 60);
+    private final Pose shootLeft1Control1 = pose(32.4282, 44.863, 0);
+    private final Pose shootLeft1Control2 = pose(24.7852, 95.1585, 0);
+    private final Pose intakeLeftFlower = pose(47.1667, 129.6765, 90);
+    private final Pose shootLeft2 = pose(47.1667, 115, 60);
+    private final Pose shootLeft2Segment1Heading = pose(47.1667, 115, 90);
+    private final Pose shootLeft2Segment2Start = pose(47.1667, 115, 90);
+    private final Pose shootLeft2Segment2End = pose(47.1667, 115, 60);
+    private final Pose moveToGarden = pose(27.1281, 24.1733, -89.1749);
+    private final Pose moveToGardenControl1 = pose(25.9496, 98.5156, 0);
+    private final Pose moveToGardenSegment1Start = pose(27.1281, 24.1733, 60);
+    private final Pose moveToGardenSegment1End = pose(27.1281, 24.1733, -100);
+    private final Pose intakeGarden = pose(7.694, 6.7067, 180);
+    private final Pose intakeGardenControl1 = pose(30.29, 7.694, 0);
+    private final Pose intakeGardenSegment1Start = pose(7.694, 6.7067, -90);
+    private final Pose intakeGardenSegment1End = pose(7.694, 6.7067, 180);
+    private final Pose intakeGardenSegment2Heading = pose(7.694, 6.7067, 180);
+    private final Pose shootGarden = pose(60, 20, 192);
+    private final Pose park = pose(15, 90, 90);
+    private final Pose parkControl1 = pose(11.4339, 56.772, 0);
+    private final Pose parkSegment1Start = pose(15, 90, 192);
+    private final Pose parkSegment1End = pose(15, 90, 125);
+    private final Pose parkSegment3Start = pose(15, 90, 87.7245);
+    private final Pose parkSegment3End = pose(15, 90, 90);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
                 instant(() -> Robot.transportState = Robot.TransportState.HOME),
+                follow(follower, moveToShootPreload()), // flywheel spins up on the way (intake off)
                 waitMs(1000),
+                waitMs(waitBeforeShoot),
                 instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
                 waitMs(3000),
                 waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
@@ -85,7 +101,7 @@ public class ShootPreloadRed_Reset extends LinearOpMode {
         resetStaticValues.resetStaticValues();
 
         inAuto = true;
-        isRed = true;
+        isRed = isRedAlliance();
         robot = new Robot(hardwareMap);
         Scheduler.reset();
         follower = robot.getFollower();
@@ -123,6 +139,10 @@ public class ShootPreloadRed_Reset extends LinearOpMode {
         Robot.transportState = Robot.TransportState.HOME;
     }
 
+    public Path moveToShootPreload() {
+        return line(start, shootPreload).linear(start, shootPreload);
+    }
+
     public Path intakeAllianceFlower() {
         return curve(startAndShootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(startAndShootPreload, intakeAllianceFlower);
     }
@@ -152,6 +172,6 @@ public class ShootPreloadRed_Reset extends LinearOpMode {
     }
 
     public Path park() {
-        return curve(start, parkControl1, park).heading(Interpolator.piecewise().until(0.3593, Interpolator.linear(parkSegment1Start, parkSegment1End)).until(0.9631, Interpolator.tangent).until(1, Interpolator.linear(parkSegment3Start, parkSegment3End)));
+        return curve(shootPreload, parkControl1, park).heading(Interpolator.piecewise().until(0.3593, Interpolator.linear(parkSegment1Start, parkSegment1End)).until(0.9631, Interpolator.tangent).until(1, Interpolator.linear(parkSegment3Start, parkSegment3End)));
     }
 }

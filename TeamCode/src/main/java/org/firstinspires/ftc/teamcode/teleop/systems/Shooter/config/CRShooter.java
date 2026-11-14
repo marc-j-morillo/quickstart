@@ -28,6 +28,10 @@ public class CRShooter {
         values.turretNectarYOffset = 0.0;
         values.turretWrapBias = 10;
 
+        // -------------- Flywheel motors --------------
+        values.shooter1Inverted = true;
+        values.shooter2Inverted = true;
+
         // -------------- Flywheel PIDF --------------
         values.shooterP = .00234;
         values.shooterI = 0;

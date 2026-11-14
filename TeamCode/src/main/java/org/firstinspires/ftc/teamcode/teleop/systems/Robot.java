@@ -55,6 +55,8 @@ public class Robot {
     public LynxModule ExpHub;
 
     @IgnoreConfigurable public static boolean flowerWedgeIsActive = false; // Auto only
+    // Auto only: true until the first shot (the preload), so the intake stays off while the flywheel first spins up
+    @IgnoreConfigurable public static boolean preloadSpinUp = true;
 
     //FSMs
     public static enum TransportState {
@@ -70,6 +72,7 @@ public class Robot {
 
     public Robot(HardwareMap hardwareMap) {
         transportState = TransportState.HOME;
+        preloadSpinUp = true;
         battery = new BatteryVoltage(hardwareMap);
         voltageMultiplier = battery.multiplier();
         shooter = new Shooter(hardwareMap);
@@ -118,6 +121,7 @@ public class Robot {
         // measured speed. Before shooter.update() runs the first time both are still 0, which reads as "in range".
         if (transportState == TransportState.POWER_SHOOTER && shooter.inRange()) {
             transportState = TransportState.SHOOT;
+            preloadSpinUp = false; // later spin-ups run the intake as before
         }
 
         intake.update(flowerWedgeIsActive);

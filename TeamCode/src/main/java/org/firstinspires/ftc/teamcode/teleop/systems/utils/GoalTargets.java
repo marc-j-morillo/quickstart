@@ -37,8 +37,8 @@ public class GoalTargets {
     // -------------- Relocalize pose --------------
     // Where the robot is when the driver presses share in the competition teleops (field inches, heading in degrees).
     // Red is tuned, blue is mirrored: x -> fieldWidth - x, heading -> 180 - heading.
-    public static double redRelocalizeX = 8;
-    public static double redRelocalizeY = 72;
+    public static double redRelocalizeX = 7;
+    public static double redRelocalizeY = 70.75;
     public static double redRelocalizeHeading = 0;
 
     public static double relocalizeX() {

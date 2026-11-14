@@ -5,6 +5,10 @@ import static com.pedropathing.api.Paths.*;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.isRed;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.inAuto;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitAfterShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.waitBeforeShoot;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeWait;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerIntakeSpeed;
+import static org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars.flowerHeadingEnd;
 import static org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose.startPose;
 
 import com.pedropathing.api.PoseFactory;
@@ -38,6 +42,7 @@ public class TestAuto extends LinearOpMode {
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose startAndShootPreload = poseFactory.of(54.0612, 8.2201, 90);
+    private final Pose shootPreload = poseFactory.of(58, 20, 135); // preload shot spot, driven to while the flywheel spins up
     private final Pose intakeAllianceFlower = poseFactory.of(11.8235, 46.9519, 180);
     private final Pose intakeAllianceFlowerControl1 = poseFactory.of(25.1704, 47.4704, 0);
     private final Pose shootLeft1 = poseFactory.of(47.1667, 115, 60);
@@ -72,12 +77,15 @@ public class TestAuto extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+            follow(follower, moveToShootPreload()), // flywheel spins up on the way (intake off)
+            waitMs(waitBeforeShoot),
             instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
             waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
             waitMs(waitAfterShoot),
             instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
             instant(() -> Robot.flowerWedgeIsActive = true),
             follow(follower, intakeAllianceFlower()),
+            waitMs(flowerIntakeWait), // keep intaking at the flower
 
             parallel(
                 follow(follower, shootLeft1()),
@@ -86,6 +94,7 @@ public class TestAuto extends LinearOpMode {
                     instant(() -> Robot.flowerWedgeIsActive = false)
                 )
             ),
+            waitMs(waitBeforeShoot),
             instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
             waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
             waitMs(waitAfterShoot),
@@ -93,46 +102,46 @@ public class TestAuto extends LinearOpMode {
             instant(() -> Robot.flowerWedgeIsActive = true),
 
             follow(follower, intakeLeftFlower()),
+            waitMs(flowerIntakeWait), // keep intaking at the flower
 
             parallel(
                 follow(follower, shootLeft2()),
                 sequential(
                     waitMs(500),
-                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                    instant(() -> Robot.flowerWedgeIsActive = false),
-                    waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                    waitMs(waitAfterShoot)
+                    instant(() -> Robot.flowerWedgeIsActive = false)
                 )
             ),
+            waitMs(waitBeforeShoot),
+            instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+            waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
+            waitMs(waitAfterShoot),
             follow(follower, moveToGarden()),
 
             instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
             follow(follower, intakeGarden()),
 
-            parallel(
-                follow(follower, shootGarden()),
-                sequential(
-                    waitMs(700),
-                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                    waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                    waitMs(waitAfterShoot)
-                )
-            ),
+            follow(follower, shootGarden()),
+            waitMs(waitBeforeShoot),
+            instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+            waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
+            waitMs(waitAfterShoot),
 
             instant(() -> Robot.flowerWedgeIsActive = true),
             instant(() -> Robot.transportState = Robot.TransportState.INTAKE),
             follow(follower, intakeRightFlower()),
+            waitMs(flowerIntakeWait), // keep intaking at the flower
             
             parallel(
                 follow(follower, shootFinal()),
                 sequential(
                     waitMs(700),
-                    instant(() -> Robot.flowerWedgeIsActive = false),
-                    instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
-                    waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
-                    waitMs(waitAfterShoot)
+                    instant(() -> Robot.flowerWedgeIsActive = false)
                 )
             ),
+            waitMs(waitBeforeShoot),
+            instant(() -> Robot.transportState = Robot.TransportState.POWER_SHOOTER),
+            waitUntil(() -> Robot.transportState == Robot.TransportState.SHOOT),
+            waitMs(waitAfterShoot),
 
             instant(() -> Robot.transportState = Robot.TransportState.HOME),
             follow(follower, park())
@@ -178,8 +187,13 @@ public class TestAuto extends LinearOpMode {
         startPose = follower.pose();
     }
 
+    public Path moveToShootPreload() {
+        return line(startAndShootPreload, shootPreload).linear(startAndShootPreload, shootPreload);
+    }
+
     public Path intakeAllianceFlower() {
-        return curve(startAndShootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(startAndShootPreload, intakeAllianceFlower);
+        return curve(shootPreload, intakeAllianceFlowerControl1, intakeAllianceFlower).linear(shootPreload, intakeAllianceFlower, flowerHeadingEnd)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootLeft1() {
@@ -187,7 +201,8 @@ public class TestAuto extends LinearOpMode {
     }
 
     public Path intakeLeftFlower() {
-        return line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower);
+        return line(shootLeft1, intakeLeftFlower).constant(intakeLeftFlower)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootLeft2() {
@@ -207,7 +222,8 @@ public class TestAuto extends LinearOpMode {
     }
 
     public Path intakeRightFlower() {
-        return curve(shootGarden, intakeRightFlowerControl1, intakeRightFlower).linear(shootGarden, intakeRightFlower);
+        return curve(shootGarden, intakeRightFlowerControl1, intakeRightFlower).linear(shootGarden, intakeRightFlower, flowerHeadingEnd)
+                .with(Constants.foresightConfig.maxPathSpeed.at(flowerIntakeSpeed)); // slower into the flower
     }
 
     public Path shootFinal() {

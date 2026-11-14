@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop.systems.Shooter;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -27,8 +28,8 @@ public class TurretPollen {
     public static double maxPosition = 1;
 
     // -------------- Per-servo trim, so the two servos don't fight each other --------------
-    public static double leftTrim = 0;
-    public static double rightTrim = 0;
+    public static double leftTrim = -0.003;
+    public static double rightTrim = 0.003;
 
     // -------------- Hardware --------------
     public static boolean leftReversed = false;
@@ -50,14 +51,42 @@ public class TurretPollen {
     // two servos can't fight each other. Takes effect on the next applyHardwareConfig (opmode init).
     public static boolean rightServoEnabled = true;
 
+    // -------------- Absolute encoder on the turret (optional, measures where the turret really is) --------------
+    // Analog absolute encoder geared to the turret, encoderTurnsPerTurretTurn encoder turns per turret turn (4:1).
+    // It only knows where it is within ONE of its own turns (= 90 turret deg at 4:1). Which turn it's on is
+    // counted while running (wraps between loops), and re-picked as the one closest to the servo command whenever
+    // the command has been still for settleMs (the servo is assumed to be within 45 turret deg of it by then).
+    // So a miscount fixes itself as soon as the turret stops. Robot config: "Analog Input" named encoderName.
+    // Without it (or encoderEnabled = false) everything works as before, with no measured angle.
+    public static boolean encoderEnabled = true;
+    public static String encoderName = "turretEncoder";
+    public static double encoderMinVoltage = 0.0;      // voltage at 0 encoder deg
+    public static double encoderMaxVoltage = 3.3;      // voltage at 360 encoder deg
+    public static boolean encoderReversed = false;     // flip so a counterclockwise turret turn reads increasing
+    public static double encoderTurnsPerTurretTurn = 4;
+    public static double encoderOffsetDegrees = 0;     // raw encoder reading with the turret facing forward (0 deg)
+    public static double settleMs = 300;               // command still this long -> re-pick the encoder turn
+    public static double settleBandDeg = 2;            // "still" = the command moved less than this
+
     public ServoImplEx turretPollenLeft, turretPollenRight;
+    public AnalogInput encoder; // null if not in the robot config
     private double commandedPosition = 0.5;
     private long lastUpdateNanos = 0;
     private boolean outputEnabled = true;
 
+    private boolean encoderTurnKnown = false;
+    private int encoderTurns = 0;
+    private double lastRawEncoderDegrees, rawEncoderDegrees;
+    private double measuredAngle = Double.NaN;
+    private double steadyAngle;
+    private long steadySinceNanos = 0;
+    private int encoderTurnFixes = 0;
+
     public TurretPollen(HardwareMap hardwareMap) {
         turretPollenLeft = hardwareMap.get(ServoImplEx.class, "turretPollenLeft");
         turretPollenRight = hardwareMap.get(ServoImplEx.class, "turretPollenRight");
+        // tryGet: robots without the encoder still run
+        encoder = hardwareMap.tryGet(AnalogInput.class, encoderName);
         applyHardwareConfig();
     }
 
@@ -137,10 +166,97 @@ public class TurretPollen {
         return high;
     }
 
-    /** Sets the servo position right away, ignoring the travel limits and smoothing (only clipped to 0..1). For tuning. */
+    /**
+     * Sets the servo position right away, ignoring the travel limits and smoothing (only clipped to 0..1). For tuning.
+     * Every position command ends up here, so this also reads the encoder (once per loop is enough).
+     */
     public void setRawPosition(double position) {
         commandedPosition = Range.clip(position, 0, 1);
         if (outputEnabled) sendCommandedPosition();
+        readEncoder();
+    }
+
+    // -------------------------------- ENCODER ---------------------------------
+
+    /**
+     * Reads the encoder and updates the measured angle. Called by every position command; call it yourself in a
+     * loop that doesn't command the turret.
+     */
+    public void readEncoder() {
+        if (encoder == null || !encoderEnabled || encoderTurnsPerTurretTurn == 0) {
+            encoderTurnKnown = false;
+            measuredAngle = Double.NaN;
+            return;
+        }
+        double raw = readRawEncoderDegrees();
+        rawEncoderDegrees = raw;
+
+        // Count encoder wraps between loops. Works while the turret turns less than half an encoder turn per loop
+        // (45 turret deg at 4:1, e.g. 600 deg/s at a 75 ms loop).
+        if (encoderTurnKnown) {
+            double delta = raw - lastRawEncoderDegrees;
+            if (delta > 180) encoderTurns--;
+            else if (delta < -180) encoderTurns++;
+        }
+        lastRawEncoderDegrees = raw;
+
+        // Command still for settleMs (and the servos powered) -> the turret is near it: re-pick the turn from it.
+        // This also finds the turn the first time.
+        long now = System.nanoTime();
+        double commanded = getCommandedAngle();
+        if (steadySinceNanos == 0 || Math.abs(commanded - steadyAngle) > settleBandDeg) {
+            steadyAngle = commanded;
+            steadySinceNanos = now;
+        }
+        if (outputEnabled && (now - steadySinceNanos) / 1e6 >= settleMs) {
+            int turns = (int) Math.round((commanded * encoderTurnsPerTurretTurn + encoderOffsetDegrees - raw) / 360.0);
+            if (encoderTurnKnown && turns != encoderTurns) encoderTurnFixes++;
+            encoderTurns = turns;
+            encoderTurnKnown = true;
+        }
+
+        measuredAngle = encoderTurnKnown
+                ? (raw + 360.0 * encoderTurns - encoderOffsetDegrees) / encoderTurnsPerTurretTurn
+                : Double.NaN;
+    }
+
+    /** Encoder angle 0..360 straight from the voltage (before the offset, the turn count and the gear ratio). */
+    private double readRawEncoderDegrees() {
+        double span = encoderMaxVoltage - encoderMinVoltage;
+        if (span <= 0) span = encoder.getMaxVoltage();
+        double degrees = (encoder.getVoltage() - encoderMinVoltage) / span * 360.0;
+        degrees = ((degrees % 360) + 360) % 360;
+        return encoderReversed ? (360 - degrees) % 360 : degrees;
+    }
+
+    /** Makes the turret's current position read as forward (0 deg). Point it straight forward first. */
+    public void zeroEncoderHere() {
+        if (encoder == null) return;
+        encoderOffsetDegrees = readRawEncoderDegrees();
+        rawEncoderDegrees = lastRawEncoderDegrees = encoderOffsetDegrees;
+        encoderTurns = 0;
+        encoderTurnKnown = true;
+        measuredAngle = 0;
+    }
+
+    /** True if there is an encoder and it knows which turn it's on (measured angle is valid). */
+    public boolean hasMeasuredAngle() {
+        return !Double.isNaN(measuredAngle);
+    }
+
+    /** Where the turret really is (turret degrees, same frame as the command), or NaN without a valid encoder reading. */
+    public double getMeasuredAngle() {
+        return measuredAngle;
+    }
+
+    /** Last raw encoder reading, 0..360 (after encoderReversed). For calibration. */
+    public double getRawEncoderDegrees() {
+        return rawEncoderDegrees;
+    }
+
+    /** How many times the turn count was corrected from the command. Once at the start is normal; more = miscounts. */
+    public int getEncoderTurnFixes() {
+        return encoderTurnFixes;
     }
 
     private void sendCommandedPosition() {
@@ -158,6 +274,7 @@ public class TurretPollen {
         if (enabled == outputEnabled) return;
         outputEnabled = enabled;
         if (enabled) {
+            steadySinceNanos = 0; // the limp turret may be anywhere: wait settleMs again before trusting the command
             turretPollenLeft.setPwmEnable();
             if (rightServoEnabled) turretPollenRight.setPwmEnable();
             sendCommandedPosition();

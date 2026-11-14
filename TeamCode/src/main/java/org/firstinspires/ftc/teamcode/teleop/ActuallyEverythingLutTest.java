@@ -26,8 +26,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 import org.firstinspires.ftc.teamcode.teleop.systems.Intake;
 import org.firstinspires.ftc.teamcode.teleop.systems.Robot;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.Shooter;
-import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.LimelightAim;
 import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.ShootOnTheMove;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
+import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.FollowerPose;
 import org.firstinspires.ftc.teamcode.teleop.systems.utils.GlobalVars;
 import com.qualcomm.hardware.lynx.LynxModule;
@@ -113,7 +114,7 @@ public class ActuallyEverythingLutTest extends OpMode {
     public static double dormant = 0;
     public static double intaking = .95;
     public double outtaking = intaking * -1;
-    public static double transferMult = 0.72;
+    public static double transferMult = 0.57;
     public double semiTransferring = intaking * transferMult;
 
 
@@ -140,7 +141,7 @@ public class ActuallyEverythingLutTest extends OpMode {
     //   X offset = how far left (+) of center the X (forward) pod sits
     //   Y offset = how far forward (+) of center the Y (strafe) pod sits
     public static final double pinpointXOffsetIn = 2.362;
-    public static final double pinpointYOffsetIn = -4.508;
+    public static final double pinpointYOffsetIn = -5.508;
 
     // ------------- SHOOTER CLASS (turret / hood / flywheel from the LUTs) -------------
     Shooter shooter;
@@ -354,6 +355,7 @@ public class ActuallyEverythingLutTest extends OpMode {
 
         // ================= TELEMETRY =================
         telemetry.addData("Distance to target (in)", Shooter.distanceFromLimelightToTagInches);
+        telemetry.addData("LUT indexes", lutIndexes(Shooter.distanceFromLimelightToTagInches));
         telemetry.addData("Flywheel velocity", Shooter.shooterVelocity);
         telemetry.addData("Flywheel target", Shooter.shooterVelocityTarget);
         // Shoot on the move: push the robot by hand. Pinpoint and pose-diff should agree (field frame).
@@ -363,13 +365,10 @@ public class ActuallyEverythingLutTest extends OpMode {
                 ShootOnTheMove.poseDiffVelX, ShootOnTheMove.poseDiffVelY, ShootOnTheMove.poseDiffTurnRate));
         telemetry.addData("SOTM aim shift (deg) / dist shift (in)", String.format("%+.1f / %+.1f",
                 ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
-        telemetry.addData("Limelight", LimelightAim.status);
-        telemetry.addData("Limelight tag / tx / range / age", String.format("%d / %+.1f deg / %.1f in / %.0f ms",
-                LimelightAim.seenTagId, LimelightAim.tx, LimelightAim.tagRangeIn, LimelightAim.frameAgeMs));
-        telemetry.addData("Turret angle limelight / odometry", String.format("%+.1f / %+.1f",
-                LimelightAim.limelightTurretAngle, LimelightAim.odometryTurretAngle));
-        telemetry.addData("Distance limelight / odometry", String.format("%.1f / %.1f",
-                LimelightAim.limelightDistance, LimelightAim.odometryDistance));
+        telemetry.addData("Turret commanded / encoder (deg)", String.format("%+.1f / %+.1f",
+                TurretPollen.positionToAngle(Shooter.turretTargetPositionPollen), Shooter.turretMeasuredAnglePollen));
+        telemetry.addData("Robot x / y (in) / heading (deg) (odometry)", String.format("%.1f / %.1f / %.1f",
+                FollowerPose.botX, FollowerPose.botY, FollowerPose.botHeading));
         telemetry.addLine();
 
         telemetry.addLine("VALUES:");
@@ -408,6 +407,30 @@ public class ActuallyEverythingLutTest extends OpMode {
 
         loopTimer.addTelemetry(telemetry);
         telemetry.update();
+    }
+
+    /**
+     * Which two shot-table slots (array indexes in the active config, same numbers as the "- n" labels in CRShooter)
+     * the distance falls between, and how far along. Uses the same slots as the velocity / hood LUTs: distance > 0
+     * and present in lutDistances, lutVelocities and lutHoods.
+     */
+    private static String lutIndexes(double distance) {
+        ShooterConfig c = Shooter.config();
+        int points = Math.min(c.lutDistances.length, Math.min(c.lutVelocities.length, c.lutHoods.length));
+        int below = -1, above = -1;
+        for (int i = 0; i < points; i++) {
+            double d = c.lutDistances[i];
+            if (d <= 0) continue; // empty slot
+            if (d <= distance && (below < 0 || d > c.lutDistances[below])) below = i;
+            if (d >= distance && (above < 0 || d < c.lutDistances[above])) above = i;
+        }
+        if (below < 0 && above < 0) return "table is empty";
+        if (below < 0) return String.format("below index %d (%.0f in), clamped to it", above, c.lutDistances[above]);
+        if (above < 0) return String.format("past index %d (%.0f in), clamped to it", below, c.lutDistances[below]);
+        double dBelow = c.lutDistances[below], dAbove = c.lutDistances[above];
+        if (dAbove == dBelow) return String.format("at index %d (%.0f in)", below, dBelow);
+        return String.format("%d (%.0f in) - %d (%.0f in), %.0f%% of the way",
+                below, dBelow, above, dAbove, 100 * (distance - dBelow) / (dAbove - dBelow));
     }
 
     // ------------------------------------------------------------------

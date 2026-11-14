@@ -29,6 +29,10 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
  *   3. ANGLE mode: command angles with the dpad and check the turret actually points there.
  *   4. SWEEP mode: runs start <-> end so you can check the full range and that the two servos don't fight
  *      (buzzing / heat = adjust leftTrim / rightTrim in TurretPollen).
+ *   5. Turret encoder (if there is one): jog left (counterclockwise) and check "Encoder raw" goes UP, else flip
+ *      TurretPollen.encoderReversed. Then point the turret exactly forward (use a square) and press back to zero it.
+ *      In ANGLE mode, "Encoder - commanded" should stay within a couple of degrees over the whole travel once the
+ *      turret stops; if it grows toward the ends, redo step 2.
  *
  * Controls (gamepad1):
  *   x ........................ next mode (JOG -> ANGLE -> SWEEP)
@@ -37,6 +41,7 @@ import org.firstinspires.ftc.teamcode.teleop.systems.Shooter.TurretPollen;
  *   y ........................ go to center (0 deg)
  *   dpad down / dpad up ...... record the current position as the start / end of travel
  *   a / b .................... record calibration point A / B at the current position
+ *   back ..................... zero the turret encoder here (turret pointing exactly forward)
  */
 @TeleOp(name = "TurretServoTuner", group = "Tuning")
 @Configurable
@@ -145,6 +150,9 @@ public class TurretServoTuner extends OpMode {
             calibrate();
         }
 
+        // ---------- Turret encoder ----------
+        if (gamepad1.backWasPressed()) turret.zeroEncoderHere();
+
         // ---------- Telemetry ----------
         double minAngle = TurretPollen.positionToAngle(TurretPollen.minPosition);
         double maxAngle = TurretPollen.positionToAngle(TurretPollen.maxPosition);
@@ -156,6 +164,22 @@ public class TurretServoTuner extends OpMode {
                 turret.turretPollenLeft.getPosition(), turret.turretPollenRight.getPosition());
         if (mode == Mode.ANGLE && (targetAngle < Math.min(minAngle, maxAngle) || targetAngle > Math.max(minAngle, maxAngle))) {
             telemetry.addLine("Target angle is past the travel limits, clamped");
+        }
+        telemetry.addLine();
+
+        telemetry.addLine("TURRET ENCODER:");
+        if (turret.encoder == null) {
+            telemetry.addLine("none (no Analog Input named " + TurretPollen.encoderName + ")");
+        } else {
+            telemetry.addData("Encoder voltage", "%.3f V", turret.encoder.getVoltage());
+            telemetry.addData("Encoder raw (deg)", "%.1f", turret.getRawEncoderDegrees());
+            if (turret.hasMeasuredAngle()) {
+                telemetry.addData("Encoder turret angle (deg)", "%.1f", turret.getMeasuredAngle());
+                telemetry.addData("Encoder - commanded (deg)", "%+.1f", turret.getMeasuredAngle() - turret.getCommandedAngle());
+            } else {
+                telemetry.addLine("Encoder turn not known yet (hold still " + TurretPollen.settleMs + " ms, or zero it)");
+            }
+            telemetry.addData("Turn fixes (1 at start is normal)", turret.getEncoderTurnFixes());
         }
         telemetry.addLine();
 
@@ -177,6 +201,7 @@ public class TurretServoTuner extends OpMode {
         telemetry.addLine(String.format("maxPosition = %.4f;", TurretPollen.maxPosition));
         telemetry.addLine(String.format("leftTrim = %.4f; rightTrim = %.4f;", TurretPollen.leftTrim, TurretPollen.rightTrim));
         telemetry.addLine(String.format("pwmLowerUs = %.0f; pwmUpperUs = %.0f;", TurretPollen.pwmLowerUs, TurretPollen.pwmUpperUs));
+        telemetry.addLine(String.format("encoderReversed = %b; encoderOffsetDegrees = %.2f;", TurretPollen.encoderReversed, TurretPollen.encoderOffsetDegrees));
         telemetry.update();
     }
 

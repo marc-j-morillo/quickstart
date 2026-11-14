@@ -39,6 +39,8 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
 - `teleop/systems/Shooter/TurretPollen.java`: positional Axon turret (two servos). `angle = (pos - centerPosition) * degreesPerPosition`
   (center 0.5, -345 deg/position, PWM 500-2500 us). `aimAt` picks the reachable equivalent angle and holds the
   nearest limit in the dead zone. Output smoothing (`smoothingTimeMs`), `rightServoEnabled`, output on/off.
+  Optional analog encoder `turretEncoder`, 4:1 to the turret: `getMeasuredAngle()` (turn counted from wraps,
+  re-picked from the command when it's still). Zero / direction in `TurretServoTuner`.
 - `teleop/systems/Shooter/ShootOnTheMove.java` (branch `shoot-on-the-move`): run by `updateAim`, corrects the aim for robot
   motion (lead by turret lag + virtual goal = goal - velocity x time of flight). Velocity from `FollowerPose.velX/velY/turnRateDeg`
   (Pinpoint, field frame) or pose differences. Time of flight table: `CRShooter.values.lutTimesOfFlight` (always CRShooter's, whichever config is active).
@@ -64,16 +66,20 @@ From the repo root, with `JAVA_HOME` pointing at a JDK 21 (Android Studio's bund
 - `teleop/ResetStaticValues`: "Reset Static Values" opmode, resets all TeamCode statics on INIT (uses `StaticDefaults`).
 - The LUT test and ManualTest still use their own raw Pinpoint + mecanum code (with different pod offsets than Pedro's).
 - `pedro/Constants.java`: Pedro config, including tuned Foresight braking coefficients. Autos are in `pedro/auto/`.
+  Blue autos extend the red ones and only override `isRedAlliance()`; red poses go through `pose(x, y, heading)`,
+  which mirrors for blue (x -> 141.5 - x, heading -> 180 - heading). Edit only the red file.
 
 ## Conventions
 - Field frame: inches, origin at a field corner, heading in degrees, 0 = +x, counterclockwise positive. Field is 141.5 in.
 - Turret angles: degrees, 0 = robot forward, counterclockwise positive.
 - Flywheel speeds are motor encoder ticks/s (28 ticks per motor rev). CRShooter has a 2:1 reduction to the wheel.
 - Motor directions checked on the robot: drive left FORWARD / right REVERSE, intake REVERSE, transfer FORWARD,
-  both shooter motors inverted (same mounting).
+  shooter motor directions are per config (`shooter1Inverted` / `shooter2Inverted`): CRShooter both inverted,
+  UnderShooter shooter1 inverted, shooter2 not.
 
 ## Hardware config names
 - Motors: `frontLeft`, `frontRight`, `backLeft`, `backRight`, `intakeMotor`, `transferMotor`, `shooter1`, `shooter2`
   (flywheel velocity is read from `shooter1`'s encoder).
 - Servos: `turretPollenLeft`, `turretPollenRight`, `hoodPollen`, `transferPollenBlocker` (gate), `flowerWedgeLeft`, `flowerWedgeRight`.
-- I2C: `pinpoint`. USB: `limelight` (Limelight 3A, optional: the override stays off without it). Unused/legacy names still in code: `turretEncoder`, `turretNectarLeft/Right`, `transferNectar`, `led`.
+- I2C: `pinpoint`. USB: `limelight` (Limelight 3A, optional: the override stays off without it).
+  Analog: `turretEncoder` (optional, turret encoder 4:1). Unused/legacy names still in code: `turretNectarLeft/Right`, `transferNectar`, `led`.
