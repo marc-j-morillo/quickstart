@@ -13,10 +13,10 @@ import com.bylazar.configurables.annotations.IgnoreConfigurable;
  */
 @Configurable
 public class GoalTargets {
-    public static double redRightX = 58;
-    public static double redRightY = 58;
-    public static double redLeftX = 62.0;
-    public static double redLeftY = 83;
+    public static double redRightX = 60;
+    public static double redRightY = 54;
+    public static double redLeftX = 58;
+    public static double redLeftY = 85;
     public static double fieldWidth = 141.5; // inches
 
     // Which goal point is in use. The competition teleops switch it with gamepad2.
