@@ -60,7 +60,7 @@ public class Drive {
         if (isCompTele) {
             setStartTeleOp();
         } else {
-            follower.setPose(FollowerPose.takeStartPose());
+            follower.setPose(new Pose(70.25, 70.25, 0));
         }
         update();
 

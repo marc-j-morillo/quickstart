@@ -12,9 +12,7 @@ public class FollowerPose {
      * So a teleop run with no auto before it starts at the middle of the field, not at an old auto's pose.
      */
     public static Pose takeStartPose() {
-        Pose pose = startPose;
-        startPose = defaultStartPose;
-        return pose;
+        return startPose;
     }
     public static Pose currentPose = new Pose(70.75, 70.75, 0);
     public static double botX = currentPose.x();

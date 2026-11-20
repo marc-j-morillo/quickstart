@@ -91,6 +91,7 @@ public abstract class CompetitionTeleop extends OpMode {
         GoalTargets.redRightY = 58;
         GoalTargets.redLeftX = 58;
         GoalTargets.redLeftY = 85;
+        GoalTargets.resetGoalTargets();
 
         hubs = BulkReads.enableManual(hardwareMap); // one bulk read per hub per loop
         GlobalVars.isRed = isRedAlliance();
@@ -147,9 +148,9 @@ public abstract class CompetitionTeleop extends OpMode {
 
         // ================= SHOOTING SIDE =================
         // Automatically change the target based on which side the robot is on
-        if (FollowerPose.botY < 58) {
+        if (FollowerPose.botY < 70) {
             GoalTargets.leftSide = false;
-        } else if (FollowerPose.botY > 83) {
+        } else if (FollowerPose.botY > 70) {
             GoalTargets.leftSide = true;
         }
 
@@ -192,6 +193,7 @@ public abstract class CompetitionTeleop extends OpMode {
 
         // ----- gamepad2: relocalization -----
         if (gamepad2.startWasPressed()) drive.relocalize();
+        if (gamepad1.startWasPressed()) drive.relocalize();
         if (gamepad2.dpadUpWasPressed()) drive.setHeading(wallHeadingDeg); // field heading, same for both alliances
 
         // ----- gamepad2: offsets -----
