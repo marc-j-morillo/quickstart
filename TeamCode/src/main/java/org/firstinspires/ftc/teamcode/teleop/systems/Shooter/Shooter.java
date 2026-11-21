@@ -80,7 +80,7 @@ public class Shooter {
     // so one opmode's adjustments never leak into the next (e.g. teleop into the next auto).
     @IgnoreConfigurable public static double turretAngleOffset = 0; // degrees, + = counterclockwise (left)
     @IgnoreConfigurable public static double velocityOffsetRpm = 0; // rpm, added to the shooting speed
-    @IgnoreConfigurable public static double hoodOffset = 0;        // hood servo position, added to the LUT hood
+    public static double hoodOffset = 0.07;        // hood servo position, added to the LUT hood
 
     // Constant hood addition (servo position), added to every hood command on top of the LUT hood, hoodTrim and
     // hoodOffset, for both configs. Not baked into new LutTuner points, so tuned points stay right while it's on.
@@ -148,7 +148,7 @@ public class Shooter {
 
         turretAngleOffset = 0;
         velocityOffsetRpm = 0;
-        hoodOffset = 0;
+        hoodOffset = 0.07;
         GoalTargets.leftSide = false;
     }
 

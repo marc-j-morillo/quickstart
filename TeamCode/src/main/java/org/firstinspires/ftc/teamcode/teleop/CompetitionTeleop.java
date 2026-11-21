@@ -118,6 +118,7 @@ public abstract class CompetitionTeleop extends OpMode {
         telemetry.addData("SOTM aim shift (deg) / dist shift (in)", () -> String.format("%+.1f / %+.1f",
                 ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
         telemetry.addData("Aim", () -> LimelightAim.active ? "LIMELIGHT" : "odometry (" + LimelightAim.status + ")");
+        telemetry.addData("Distance to target (in)", () -> String.format("%.1f", Shooter.distanceFromLimelightToTagInches));
         telemetry.update();
     }
 

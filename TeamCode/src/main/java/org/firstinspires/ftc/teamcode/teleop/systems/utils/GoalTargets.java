@@ -14,9 +14,9 @@ import com.bylazar.configurables.annotations.IgnoreConfigurable;
 @Configurable
 public class GoalTargets {
     public static double redRightX = 60;
-    public static double redRightY = 58;
+    public static double redRightY = 58.5;
     public static double redLeftX = 58;
-    public static double redLeftY = 85;
+    public static double redLeftY = 83;
     public static final double redRightXDefault = redRightX;
     public static final double redRightYDefault = redRightY;
     public static final double redLeftXDefault = redLeftX;

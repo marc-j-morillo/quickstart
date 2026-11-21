@@ -144,3 +144,5 @@ mode stays; the encoder only measures). Analog Input `turretEncoder`, optional (
   then flowerIntakeWait as before, so a robot stuck on a flower still moves on. Auto INTAKE / POWER_SHOOTER has a
   transfer stall check (`Intake.autoTransferStallMilliamps`); the after-every-path reset is not wired up yet.
   CompetitionTeleop init sets all four red goal values (60,58 / 58,85) since autos change them. Untested on the robot.
+- 2026-11-19: Tried Sloth 0.3.2 hot reload (needs Gradle 9.1.0 for the Load plugin; FTC SDK kept at 11.2.1). Did not work
+  on the robot (likely Sloth itself), so the `sloth-integration` branch was deleted. No Sloth on any branch.

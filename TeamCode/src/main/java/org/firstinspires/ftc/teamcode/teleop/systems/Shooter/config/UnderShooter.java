@@ -50,48 +50,48 @@ public class UnderShooter {
         };
         // 1.8x CRShooter's speeds
         values.lutVelocities = new double[]{
-                1800, //  0 in (empty slot, ignored)
-                1800, // 20 in
-                1825, // 25 in
-                1850, // 30 in
-                1875, // 35 in
-                1900, // 40 in
-                1925, // 45 in
-                1950, // 50 in
-                1967, // 55 in
-                1980, // 60 in
-                2000, // 65 in
-                2000, // 70 in
+                1800, //  0 in (empty slot, ignored) - 0
+                1800, // 20 in - 1
+                1825, // 25 in - 2
+                1850, // 30 in - 3
+                1875, // 35 in - 4
+                1925, // 40 in - 5
+                1950, // 45 in - 6
+                1970, // 50 in - 7
+                1990, // 55 in - 8
+                1990, // 60 in - 9
+                2000, // 65 in - 10
+                2000, // 70 in - 11
         };
         values.lutHoods = new double[]{
-                .7, //  0 in (empty slot, ignored)
-                .7, // 20 in
-                0.47, // 25 in
-                0.4, // 30 in
-                0.34, // 35 in
-                0.28, // 40 in
-                0.3, // 45 in
-                0.22, // 50 in
-                0.16, // 55 in
-                0.12, // 60 in
-                0.10, // 65 in
-                0.05, // 70 in
+                .7, //  0 in (empty slot, ignored) - 0
+                .7, // 20 in - 1
+                0.47, // 25 in - 2
+                0.4, // 30 in - 3
+                0.34, // 35 in - 4
+                0.28, // 40 in - 5
+                0.3, // 45 in - 6
+                0.22, // 50 in - 7
+                0.16, // 55 in - 8
+                0.12, // 60 in - 9
+                0.10, // 65 in - 10
+                0.05, // 70 in - 11
         };
 
         values.useShootingKpLut = true;
         values.lutShootingKps = new double[]{
-                0.008, //  0 in (empty slot, ignored)
-                0.008, // 20 in
-                0.008, // 25 in
-                0.008, // 30 in
-                0.008, // 35 in
-                0.008, // 40 in
-                0.01, // 45 in
-                0.01, // 50 in
-                0.01, // 55 in
-                0.01, // 60 in
-                0.012, // 65 in
-                0.012, // 70 in
+                0.008, //  0 in (empty slot, ignored) - 0
+                0.008, // 20 in - 1
+                0.008, // 25 in - 2
+                0.008, // 30 in - 3
+                0.008, // 35 in - 4
+                0.008, // 40 in - 5
+                0.01, // 45 in - 6
+                0.01, // 50 in - 7
+                0.01, // 55 in - 8
+                0.01, // 60 in - 9
+                0.012, // 65 in - 10
+                0.012, // 70 in - 11
         };
 
         values.velocityTrim = 0;
