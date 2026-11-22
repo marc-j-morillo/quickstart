@@ -146,3 +146,9 @@ mode stays; the encoder only measures). Analog Input `turretEncoder`, optional (
   CompetitionTeleop init sets all four red goal values (60,58 / 58,85) since autos change them. Untested on the robot.
 - 2026-11-19: Tried Sloth 0.3.2 hot reload (needs Gradle 9.1.0 for the Load plugin; FTC SDK kept at 11.2.1). Did not work
   on the robot (likely Sloth itself), so the `sloth-integration` branch was deleted. No Sloth on any branch.
+- 2026-11-22: Reviewed RedSolo3TipPartnerPark (untested) against RedSolo2Flower (works). Fixed: poses go through
+  `pose()` (blue mirror), both flower intakes at `flowerIntakeSpeed` like Solo2Flower, `doubleParkSLOW` actually slow
+  (`GlobalVars.doubleParkSpeed` 0.4), garden path starts at the alliance-preload shot pose (was 1 deg off). Builds;
+  untested on the robot. Open: the fixed waits alone are ~17 s (plus 13 paths), so it likely runs past 30 s and misses
+  the garden shot / park; preload gets ~1 s of feed (Solo2Flower waits 2 s extra); `flowerPathTimeout` was lowered
+  3000 -> 1000 for every auto, Solo2Flower included.

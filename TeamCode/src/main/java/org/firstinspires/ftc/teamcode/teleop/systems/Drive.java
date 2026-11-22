@@ -97,6 +97,8 @@ public class Drive {
         if (gamepad1.leftStickButtonWasPressed()) fieldCentric = !fieldCentric;
         if (gamepad1.dpadDownWasPressed()) resetHeading();
         if (gamepad1.shareWasPressed()) relocalize();
+        if (gamepad1.xWasPressed()) relocalizeLeftCorner();
+        if (gamepad1.bWasPressed()) relocalizeRightCorner();
         FollowerPose.update(follower.pose());
 
         drive(gamepad1);
@@ -139,6 +141,14 @@ public class Drive {
 
     /** Relocalize to the GoalTargets relocalize pose (configurable, blue mirrored). */
     public void relocalize() {
+        setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+    }
+
+    public void relocalizeLeftCorner() {
+        setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+    }
+
+    public void relocalizeRightCorner() {
         setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
     }
 

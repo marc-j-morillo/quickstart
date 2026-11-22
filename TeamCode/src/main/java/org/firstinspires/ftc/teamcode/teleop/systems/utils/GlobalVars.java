@@ -14,7 +14,12 @@ public class GlobalVars {
     public static int flowerIntakeWait = 3000; // ms to sit at a flower after the intake path ends, still intaking
     // Most ms a path into a flower may take. If the robot hasn't reached the end by then (stuck on the flower), the
     // auto moves on to flowerIntakeWait anyway; the follower keeps pushing toward the end until the next path starts.
-    public static int flowerPathTimeout = 3000;
+    public static int flowerPathTimeout = 1000;
+    public static int allianceIntakeTimeout = 1000;
+    public static int allianceIntakeWait = 1000;
+    public static int gardenWait = 1000;
+    public static int gardenTimeout = 750;
+    public static double doubleParkSpeed = 0.7; // RedSolo3TipPartnerPark's last park path runs at this fraction of normal speed
     public static double flowerIntakeSpeed = 0.5; // paths into a flower run at this fraction of normal speed (0-1]
     public static double flowerHeadingEnd = 0.75; // paths into a flower finish turning at this fraction of the path
 }
