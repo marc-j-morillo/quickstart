@@ -30,16 +30,19 @@ import java.util.List;
  *               Limelight instead of odometry ("Aim" line in telemetry)
  *
  * States (picked from gamepad1 every loop):
- *   SHOOTING .. gate open (right bumper held) AND right trigger: Intake.runFeed (no transfer stall check),
- *               flywheel P from the shooting kP table (Shooter.config().lutShootingKps) if useShootingKpLut
- *   INTAKING .. right trigger (gate closed): Intake.runIntake (stops the transfer when it stalls), flywheel P = shooterP
+ *   SHOOTING .. right bumper held and the flywheel has reached its target (+-gateToleranceRpm): gate open,
+ *               Intake.runFeed (no transfer stall check), flywheel P from the shooting kP table
+ *               (Shooter.config().lutShootingKps) if useShootingKpLut. Stays SHOOTING until the bumper is released,
+ *               even when the flywheel slows as balls go through.
+ *   INTAKING .. right trigger (not shooting, including bumper held while the flywheel is still getting to speed):
+ *               Intake.runIntake (stops the transfer when it stalls), flywheel P = shooterP
  *   IDLING .... anything else (just driving): left trigger outtakes, flywheel P = shooterP
  *
  * gamepad1 (driver):
  *   left stick / right stick .... drive (field-centric) / turn
- *   right trigger ............... intake, or shoot while the gate is open
+ *   right trigger ............... intake
  *   left trigger ................ outtake
- *   right bumper (hold) ......... open the gate (rumbles while it's open)
+ *   right bumper (hold) ......... shoot: gate opens once the flywheel is at speed, feeds until released (rumbles while open)
  *   x / b ....................... aim at the LEFT / RIGHT goal point (also works during init)
  *   dpad down ................... reset heading only (keeps x/y)
  *   dpad up ..................... relocalize x/y to the current goal point (keeps heading)
@@ -70,6 +73,7 @@ public abstract class CompetitionTeleop extends OpMode {
     public static final double hoodOffsetStep = 0.01;
     public static final double wallHeadingDeg = 90; // gamepad2 dpad up: back against a wall, facing +y
     public static final double triggerThreshold = 0.1;
+    public static final double gateToleranceRpm = 30; // gate opens when the flywheel is within +- this of its target (motor rpm)
 
     // ------------- SUBSYSTEMS -------------
     private List<LynxModule> hubs;
@@ -79,6 +83,7 @@ public abstract class CompetitionTeleop extends OpMode {
     private BatteryVoltage battery;
 
     private boolean rumbling = false;
+    private boolean shooting = false; // gate latched open: set once the flywheel is at speed, cleared on bumper release
     private boolean flowerWedgeDown = false;
     // gamepad2 triggers are analog (no WasPressed), so track presses here: one step per pull
     private boolean hoodUpHeld = false, hoodDownHeld = false;
@@ -118,7 +123,10 @@ public abstract class CompetitionTeleop extends OpMode {
         telemetry.addData("SOTM aim shift (deg) / dist shift (in)", () -> String.format("%+.1f / %+.1f",
                 ShootOnTheMove.aimShiftDeg, ShootOnTheMove.distanceShift));
         telemetry.addData("Aim", () -> LimelightAim.active ? "LIMELIGHT" : "odometry (" + LimelightAim.status + ")");
-        telemetry.addData("Distance to target (in)", () -> String.format("%.1f", Shooter.distanceFromLimelightToTagInches));
+        telemetry.addData("Flywheel target / actual (ticks/s)", () -> String.format("%.0f / %.0f %s",
+                Shooter.shooterVelocityTarget, Shooter.shooterVelocity,
+                shooter.inRange(gateToleranceRpm) ? "IN RANGE" : ""));
+        telemetry.addData("Distance to target (in)",() -> String.format("%.1f", Shooter.distanceFromLimelightToTagInches));
         telemetry.update();
     }
 
@@ -143,7 +151,12 @@ public abstract class CompetitionTeleop extends OpMode {
         drive.drive(gamepad1);
 
         // ================= GATE =================
-        boolean gateOpen = gamepad1.right_bumper; // open only while held
+        // Right bumper held: wait until the flywheel is within +-gateToleranceRpm of its target, then open the gate
+        // and keep shooting until the bumper is released. Latched, so the speed dip from each ball leaving doesn't
+        // close the gate mid-volley. shooter.inRange uses the speeds from last loop's runLutFlywheel.
+        if (!gamepad1.right_bumper) shooting = false;
+        else if (!shooting && shooter.inRange(gateToleranceRpm)) shooting = true;
+        boolean gateOpen = shooting;
         intake.setGateOpen(gateOpen);
         rumbleWhile(gateOpen);
 
@@ -157,7 +170,7 @@ public abstract class CompetitionTeleop extends OpMode {
 
         // ================= STATE =================
         boolean rightTrigger = gamepad1.right_trigger > triggerThreshold;
-        if (gateOpen && rightTrigger) state = State.SHOOTING;
+        if (shooting) state = State.SHOOTING;
         else if (rightTrigger) state = State.INTAKING;
         else state = State.IDLING;
 
@@ -193,9 +206,12 @@ public abstract class CompetitionTeleop extends OpMode {
         //if (gamepad1.bWasPressed() || gamepad2.bWasPressed()) GoalTargets.leftSide = false;
 
         // ----- gamepad2: relocalization -----
-        if (gamepad2.startWasPressed()) drive.relocalize();
-        if (gamepad1.startWasPressed()) drive.relocalize();
+        if (gamepad2.startWasPressed() || gamepad1.startWasPressed()) drive.relocalize();
         if (gamepad2.dpadUpWasPressed()) drive.setHeading(wallHeadingDeg); // field heading, same for both alliances
+
+        if (gamepad1.xWasPressed()) drive.relocalizeLeftCorner();
+        if (gamepad1.bWasPressed()) drive.relocalizeRightCorner();
+        if (gamepad1.backWasPressed()) drive.relocalizeOnGoal();
 
         // ----- gamepad2: offsets -----
         if (gamepad2.rightBumperWasPressed()) Shooter.velocityOffsetRpm += rpmOffsetStep;

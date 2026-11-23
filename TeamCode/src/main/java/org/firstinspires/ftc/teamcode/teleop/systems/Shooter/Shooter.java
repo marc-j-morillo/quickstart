@@ -327,6 +327,15 @@ public class Shooter {
         }
     }
 
+    /**
+     * Like inRange(), with the tolerance in motor rpm (same units as velocityOffsetRpm): true when the flywheel is
+     * within +-toleranceRpm of its target. Uses the speeds from the last runFlywheel / runLutFlywheel call.
+     */
+    public boolean inRange(double toleranceRpm) {
+        return shooterVelocityTarget > 10
+                && Math.abs(shooterVelocity - shooterVelocityTarget) <= rpmToTicksPerSecond(toleranceRpm);
+    }
+
     /** Flywheel target in ticks/s: the LUT speed when shooting (or in auto), otherwise idleVelocity. */
     private double calcVelocity(boolean isShooting) {
         if (!isShooting && !inAuto) {

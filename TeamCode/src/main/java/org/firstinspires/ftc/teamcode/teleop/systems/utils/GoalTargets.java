@@ -59,6 +59,54 @@ public class GoalTargets {
         return isRed ? redRelocalizeHeading : 180 - redRelocalizeHeading;
     }
 
+    public static double redRelocalizeXOnGoal = 40.25;
+    public static double redRelocalizeYOnGoal = 70.75;
+    public static double redRelocalizeHeadingOnGoal = 0;
+
+    public static double relocalizeXOnGoal() {
+        return isRed ? redRelocalizeXOnGoal : fieldWidth - redRelocalizeXOnGoal;
+    }
+
+    public static double relocalizeYOnGoal() {
+        return redRelocalizeYOnGoal;
+    }
+
+    public static double relocalizeHeadingOnGoal() {
+        return isRed ? redRelocalizeHeadingOnGoal : 180 - redRelocalizeHeadingOnGoal;
+    }
+
+    public static double redRelocalizeXLeftCorner = 7;
+    public static double redRelocalizeYLeftCorner = 135.5;
+    public static double redRelocalizeHeadingLeftCorner = 0;
+
+    public static double relocalizeXLeftCorner() {
+        return isRed ? redRelocalizeXLeftCorner : fieldWidth - redRelocalizeXLeftCorner;
+    }
+
+    public static double relocalizeYLeftCorner() {
+        return redRelocalizeYLeftCorner;
+    }
+
+    public static double relocalizeHeadingLeftCorner() {
+        return isRed ? redRelocalizeHeadingLeftCorner : 180 - redRelocalizeHeadingLeftCorner;
+    }
+
+    public static double redRelocalizeXRightCorner = 7;
+    public static double redRelocalizeYRightCorner = 6;
+    public static double redRelocalizeHeadingRightCorner = 0;
+
+    public static double relocalizeXRightCorner() {
+        return isRed ? redRelocalizeXRightCorner : fieldWidth - redRelocalizeXRightCorner;
+    }
+
+    public static double relocalizeYRightCorner() {
+        return redRelocalizeYRightCorner;
+    }
+
+    public static double relocalizeHeadingRightCorner() {
+        return isRed ? redRelocalizeHeadingRightCorner : 180 - redRelocalizeHeadingRightCorner;
+    }
+
     public void setRedRightX(double x) {
         redRightX = x;
     }

@@ -96,9 +96,10 @@ public class Drive {
     public void update(Gamepad gamepad1) {
         if (gamepad1.leftStickButtonWasPressed()) fieldCentric = !fieldCentric;
         if (gamepad1.dpadDownWasPressed()) resetHeading();
-        if (gamepad1.shareWasPressed()) relocalize();
+        if (gamepad1.startWasPressed()) relocalize();
         if (gamepad1.xWasPressed()) relocalizeLeftCorner();
         if (gamepad1.bWasPressed()) relocalizeRightCorner();
+        if (gamepad1.backWasPressed()) relocalizeOnGoal();
         FollowerPose.update(follower.pose());
 
         drive(gamepad1);
@@ -144,12 +145,16 @@ public class Drive {
         setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
     }
 
+    public void relocalizeOnGoal() {
+        setPose(GoalTargets.relocalizeXOnGoal(), GoalTargets.relocalizeYOnGoal(), GoalTargets.relocalizeHeadingOnGoal());
+    }
+
     public void relocalizeLeftCorner() {
-        setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+        setPose(GoalTargets.relocalizeXLeftCorner(), GoalTargets.relocalizeYLeftCorner(), GoalTargets.relocalizeHeadingLeftCorner());
     }
 
     public void relocalizeRightCorner() {
-        setPose(GoalTargets.relocalizeX(), GoalTargets.relocalizeY(), GoalTargets.relocalizeHeading());
+        setPose(GoalTargets.relocalizeXRightCorner(), GoalTargets.relocalizeYRightCorner(), GoalTargets.relocalizeHeadingRightCorner());
     }
 
     /** Competition teleop start: the pose the last auto ended at (used once), or 70.75, 70.75, 0 deg if no auto ran. */
